@@ -300,7 +300,17 @@ export function DemoCenter({ loading, onRunScenario }: DemoCenterProps) {
                 </span>
               </div>
 
-              <div className="mt-2 line-clamp-2 text-[11px] text-slate-200/90">{scenario.prompt}</div>
+              <div
+                className="mt-2 text-[11px] text-slate-200/90"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                {scenario.prompt}
+              </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-300">
                 <span className="rounded-full border border-slate-600 px-2 py-0.5">{scenario.category}</span>

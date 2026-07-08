@@ -42,6 +42,7 @@ export function ExecutiveDashboard() {
       if (withScenarios) {
         setScenarios(await api.getScenarios());
       }
+      setError(null);
     } catch (err) {
       setError((err as Error).message);
     }

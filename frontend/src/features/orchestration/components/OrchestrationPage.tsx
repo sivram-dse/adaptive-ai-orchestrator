@@ -65,6 +65,7 @@ export function OrchestrationPage() {
       if (withScenarios) {
         setScenarios(await api.getScenarios());
       }
+      setError(null);
     } catch (err) {
       setError((err as Error).message);
     }

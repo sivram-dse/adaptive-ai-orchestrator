@@ -48,7 +48,7 @@ export function CostIntelligenceDashboard({
   const executionTimeSavedPct = ratio(model.adaptive.executionTimeMs, baselineRow.executionTimeMs);
 
   const routeLegend = routes.length > 0 ? routes : fallbackRoutes(summary);
-  const totalRequests = Math.max(1, recent.length);
+  const totalRequests = recent.length;
   const adaptiveCostTotal = model.adaptive.estimatedCost * totalRequests;
   const baselineCostTotal = baselineRow.estimatedCost * totalRequests;
   const moneySavedTotal = Math.max(0, baselineCostTotal - adaptiveCostTotal);

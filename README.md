@@ -157,6 +157,9 @@ Example body:
 }
 ```
 
+Note: Current hackathon build accepts `tenantId` and `userId` in request body for demo simplicity.  
+Production roadmap moves identity to JWT/SecurityContext with tenant isolation controls.
+
 ### Analytics APIs
 - `GET /analytics/summary`
 - `GET /analytics/paths`

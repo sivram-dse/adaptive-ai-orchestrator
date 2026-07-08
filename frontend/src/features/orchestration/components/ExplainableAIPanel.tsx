@@ -64,11 +64,11 @@ const metricCards: Array<{
 
 export function ExplainableAIPanel({ prompt, category, difficulty, result }: ExplainableAIPanelProps) {
   const explanation = useMemo(
-    () => buildExplanation(prompt, category, difficulty, result),
+    () => (result ? buildExplanation(prompt, category, difficulty, result) : null),
     [prompt, category, difficulty, result],
   );
 
-  if (!result) {
+  if (!result || !explanation) {
     return (
       <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
         <h2 className="text-lg font-semibold">Explainable AI Panel</h2>
@@ -198,7 +198,7 @@ function buildExplanation(
   prompt: string,
   category: string,
   difficulty: string,
-  result: OrchestrationResultDto | null,
+  result: OrchestrationResultDto,
 ): {
   signal: SignalSnapshot;
   selectionReason: string;
@@ -206,24 +206,24 @@ function buildExplanation(
   recommendation: string;
 } {
   const signal = buildSignalSnapshot(prompt, category, difficulty, result);
-  const selectedProfile = strategyProfiles[result!.strategy];
+  const selectedProfile = strategyProfiles[result.strategy];
   const selectedScore = signal.decisionScore;
   const rationale = result?.rationale?.trim() || "This path balanced cost, latency, and confidence better than alternatives.";
 
-  const alternatives = Object.entries(result!.decisionScores ?? {})
-    .filter(([strategy]) => strategy !== result!.strategy)
+  const alternatives = Object.entries(result.decisionScores ?? {})
+    .filter(([strategy]) => strategy !== result.strategy)
     .map(([strategy, score]) => {
       const typedStrategy = strategy as ExecutionStrategy;
       return {
         strategy: typedStrategy,
         score,
-        reasons: buildRejectionReasons(typedStrategy, signal, result!.strategy, score, selectedScore),
+        reasons: buildRejectionReasons(typedStrategy, signal, result.strategy, score, selectedScore),
         severity: computeSeverity(typedStrategy, signal, score, selectedScore),
       } as AlternativeInsight;
     })
     .sort((a, b) => b.score - a.score);
 
-  const recommendation = `Keep ${result!.strategy.replaceAll("_", " ")} for similar requests. ${recommendationHint(
+  const recommendation = `Keep ${result.strategy.replaceAll("_", " ")} for similar requests. ${recommendationHint(
     signal,
     selectedProfile,
   )}`;
