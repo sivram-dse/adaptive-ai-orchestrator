@@ -1,0 +1,128 @@
+classDiagram
+    class OrchestrationController {
+      +execute(UserRequest) OrchestrationResult
+    }
+
+    class OrchestrationService {
+      <<interface>>
+      +execute(UserRequest) OrchestrationResult
+    }
+    class DefaultOrchestrationService
+
+    class AdaptiveOrchestrator {
+      <<interface>>
+      +decide(UserRequest) StrategyDecision
+      +execute(UserRequest, StrategyDecision) OrchestrationResult
+    }
+    class DefaultAdaptiveOrchestrator
+
+    class ExecutionPathRegistry {
+      <<interface>>
+      +resolve(ExecutionStrategy) ExecutionPath
+    }
+    class DefaultExecutionPathRegistry
+
+    class DecisionEngine {
+      <<interface>>
+      +evaluate(UserRequest) StrategyDecision
+    }
+    class DefaultDecisionEngine
+
+    class StrategySelector {
+      <<interface>>
+      +rankCandidateStrategies(UserRequest) List~ExecutionStrategy~
+    }
+
+    class CostEstimator {
+      <<interface>>
+      +estimate(ExecutionStrategy, UserRequest) CostEstimate
+    }
+    class DefaultCostEstimator
+
+    class DecisionAnalytics {
+      <<interface>>
+      +successRate(ExecutionStrategy, TaskComplexity) double
+      +averageCost(ExecutionStrategy) double
+    }
+
+    class SkillRegistry {
+      <<interface>>
+      +resolve(UserRequest) Optional~Skill~
+    }
+
+    class LanguageModelGateway {
+      <<interface>>
+      +infer(UserRequest) OrchestrationResult
+      +modelTier() String
+    }
+
+    class SingleAgentCoordinator {
+      <<interface>>
+      +execute(UserRequest) OrchestrationResult
+    }
+
+    class MultiAgentCoordinator {
+      <<interface>>
+      +execute(UserRequest) OrchestrationResult
+    }
+
+    class DecisionRepository {
+      <<interface>>
+      +save(StrategyDecision) void
+    }
+
+    class ExecutionRepository {
+      <<interface>>
+      +save(OrchestrationResult) void
+    }
+
+    class TelemetryPublisher {
+      <<interface>>
+      +publishDecision(StrategyDecision) void
+      +publishResult(OrchestrationResult) void
+    }
+    class StructuredLoggingTelemetryPublisher
+
+    class ExecutionTraceService {
+      <<interface>>
+      +start(UserRequest, correlationId) void
+      +markDecision(requestId, StrategyDecision) void
+      +markResult(requestId, OrchestrationResult) void
+    }
+
+    class LearningEngine {
+      <<interface>>
+      +learn(StrategyDecision, OrchestrationResult) void
+    }
+    class InMemoryLearningEngine
+
+    class UserRequest
+    class StrategyDecision
+    class OrchestrationResult
+    class CostEstimate
+    class ExecutionStrategy
+    class TaskComplexity
+
+    OrchestrationController --> OrchestrationService
+    DefaultOrchestrationService ..|> OrchestrationService
+    OrchestrationService --> AdaptiveOrchestrator
+    DefaultOrchestrationService --> LearningEngine
+    DefaultOrchestrationService --> ExecutionTraceService
+    DefaultAdaptiveOrchestrator ..|> AdaptiveOrchestrator
+    AdaptiveOrchestrator --> DecisionEngine
+    AdaptiveOrchestrator --> ExecutionPathRegistry
+    DefaultExecutionPathRegistry ..|> ExecutionPathRegistry
+    DefaultDecisionEngine ..|> DecisionEngine
+    DefaultCostEstimator ..|> CostEstimator
+    AdaptiveOrchestrator --> SkillRegistry
+    AdaptiveOrchestrator --> LanguageModelGateway
+    AdaptiveOrchestrator --> SingleAgentCoordinator
+    AdaptiveOrchestrator --> MultiAgentCoordinator
+    DecisionEngine --> StrategySelector
+    DecisionEngine --> CostEstimator
+    DecisionEngine --> DecisionAnalytics
+    DecisionEngine --> DecisionRepository
+    AdaptiveOrchestrator --> ExecutionRepository
+    AdaptiveOrchestrator --> TelemetryPublisher
+    StructuredLoggingTelemetryPublisher ..|> TelemetryPublisher
+    InMemoryLearningEngine ..|> LearningEngine

@@ -1,0 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface-deep: #0f172a;
+  --surface-mid: #0b1e2e;
+  --accent-main: #22d3ee;
+  --accent-warm: #fbbf24;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  background: radial-gradient(circle at 10% 0%, #133b5c 0%, var(--surface-mid) 35%, var(--surface-deep) 70%);
+}

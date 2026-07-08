@@ -1,0 +1,7 @@
+# Architecture-only scaffold
+
+target/
+node_modules/
+dist/
+.idea/
+.vscode/

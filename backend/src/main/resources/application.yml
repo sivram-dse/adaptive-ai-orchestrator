@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: adaptive-ai-orchestrator
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+aio:
+  routing:
+    max-acceptable-cost-usd: 0.25
+    min-confidence-threshold: 0.72
+    max-acceptable-latency-ms: 5500
+  execution:
+    max-retries: 1

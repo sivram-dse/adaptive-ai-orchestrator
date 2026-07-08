@@ -1,0 +1,28 @@
+flowchart LR
+    UI[React Dashboard] --> API[REST Controllers]
+    API --> SVC[DefaultOrchestrationService]
+    SVC --> ORCH[DefaultAdaptiveOrchestrator]
+
+    ORCH --> DE[DefaultDecisionEngine]
+    DE --> SC[HeuristicStrategySelector]
+    DE --> CC[HeuristicComplexityClassifier]
+    DE --> CE[DefaultCostEstimator]
+    DE --> POL[DefaultCostPolicy]
+    DE --> DAN[DecisionAnalytics]
+
+    ORCH --> REG[ExecutionPathRegistry]
+    REG --> CODE[Deterministic Path]
+    REG --> SKILL[Skill Path]
+    REG --> LLM[Small/Medium/Large LLM Paths]
+    REG --> AGENT[Single/Multi Agent Paths]
+
+    ORCH --> DREP[DecisionRepository]
+    ORCH --> EREP[ExecutionRepository]
+    ORCH --> TEL[Structured Telemetry]
+
+    SVC --> LEARN[LearningEngine]
+    SVC --> TRACE[ExecutionTraceService]
+    TRACE --> OBS[Observability APIs + Health]
+    API --> ANA[Analytics APIs]
+    ANA --> EREP
+    ANA --> LEARN
