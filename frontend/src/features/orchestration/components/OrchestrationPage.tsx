@@ -11,9 +11,10 @@ import {
   ScenarioBenchmarkResultDto,
 } from "../../../shared/contracts/orchestration.contracts";
 import { StrategyBadge } from "./StrategyBadge";
-
-const flowSteps = ["REQUEST_RECEIVED", "DECISION", "COMPLETED"];
-const agentBaselineCost = 0.18;
+import { ExecutionVisualization } from "./ExecutionVisualization";
+import { CostIntelligenceDashboard } from "./CostIntelligenceDashboard";
+import { ExplainableAIPanel } from "./ExplainableAIPanel";
+import { DemoCenter, DemoScenario } from "./DemoCenter";
 
 export function OrchestrationPage() {
   const api = useMemo(() => new HttpOrchestrationApi(), []);
@@ -71,27 +72,50 @@ export function OrchestrationPage() {
 
   async function onExecute(event: FormEvent) {
     event.preventDefault();
+    await executePrompt(prompt, category, difficulty);
+  }
+
+  async function executePrompt(
+    payload: string,
+    promptCategory: string,
+    promptDifficulty: string,
+    extraMetadata?: Record<string, string>,
+  ): Promise<OrchestrationResultDto | null> {
     setLoading(true);
     setError(null);
     try {
       const executed = await api.execute({
         tenantId: "enterprise-tenant",
         userId: "architect-user",
-        payload: prompt,
+        payload,
         metadata: {
-          category,
-          difficulty,
-          reasoningDepth: difficulty === "easy" ? "0.2" : difficulty === "medium" ? "0.5" : "0.85",
-          contextSize: difficulty === "complex" ? "0.85" : "0.35",
+          category: promptCategory,
+          difficulty: promptDifficulty,
+          reasoningDepth:
+            promptDifficulty === "easy" ? "0.2" : promptDifficulty === "medium" ? "0.5" : "0.85",
+          contextSize: promptDifficulty === "complex" ? "0.85" : "0.35",
+          ...(extraMetadata ?? {}),
         },
       });
       setResult(executed);
       await refreshDashboard(false);
+      return executed;
     } catch (err) {
       setError((err as Error).message);
+      return null;
     } finally {
       setLoading(false);
     }
+  }
+
+  async function onRunDemoScenario(scenario: DemoScenario): Promise<OrchestrationResultDto | null> {
+    setPrompt(scenario.prompt);
+    setCategory(scenario.category);
+    setDifficulty(scenario.difficulty);
+    return executePrompt(scenario.prompt, scenario.category, scenario.difficulty, {
+      demoScenario: scenario.id,
+      presentationMode: "true",
+    });
   }
 
   return (
@@ -154,80 +178,27 @@ export function OrchestrationPage() {
           <MetricCard label="Savings" value={toUsd(summary?.savingsVsAlwaysAgent)} />
         </section>
 
+        <DemoCenter loading={loading} onRunScenario={onRunDemoScenario} />
+
         <section className="grid gap-4 lg:grid-cols-2">
-          <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-            <h2 className="text-lg font-semibold">Live Execution Visualization</h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {flowSteps.map((step) => {
-                const complete = selectedTrace?.steps.some((traceStep) => traceStep.stage === step);
-                return (
-                  <div key={step} className={`rounded-full px-3 py-1 text-xs font-semibold ${complete ? "bg-emerald-400 text-slate-900" : "bg-slate-700 text-slate-200"}`}>
-                    {step}
-                  </div>
-                );
-              })}
-            </div>
-            {result && (
-              <div className="mt-4 space-y-2 text-sm">
-                <StrategyBadge strategy={result.strategy} />
-                <p className="text-cyan-100/90">{result.rationale}</p>
-                <p className="text-xs text-slate-300">Correlation ID: {result.correlationId}</p>
-              </div>
-            )}
-            {selectedTrace && (
-              <ol className="mt-4 space-y-2 text-xs">
-                {selectedTrace.steps.map((step) => (
-                  <li key={`${step.at}-${step.stage}`} className="rounded-lg border border-slate-700 bg-slate-950/50 p-2">
-                    <span className="font-semibold text-cyan-300">{step.stage}</span> - {step.detail}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </article>
+          <ExecutionVisualization
+            prompt={prompt}
+            category={category}
+            difficulty={difficulty}
+            loading={loading}
+            result={result}
+            selectedTrace={selectedTrace}
+          />
 
-          <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-            <h2 className="text-lg font-semibold">Decision Tree Scores</h2>
-            <div className="mt-3 space-y-2">
-              {result &&
-                Object.entries(result.decisionScores ?? {})
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([strategy, score]) => (
-                    <div key={strategy}>
-                      <div className="mb-1 flex justify-between text-xs">
-                        <span>{strategy}</span>
-                        <span>{score.toFixed(3)}</span>
-                      </div>
-                      <div className="h-2 rounded bg-slate-700">
-                        <div className="h-2 rounded bg-cyan-400" style={{ width: `${Math.max(5, Math.min(100, score * 60))}%` }} />
-                      </div>
-                    </div>
-                  ))}
-              {!result && <p className="text-sm text-slate-300">Execute a request to see strategy scoring.</p>}
-            </div>
-          </article>
+          <ExplainableAIPanel
+            prompt={prompt}
+            category={category}
+            difficulty={difficulty}
+            result={result}
+          />
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-            <h3 className="font-semibold">Cost Comparison</h3>
-            <p className="mt-2 text-sm">Actual: {toUsd(result?.actualUsd)}</p>
-            <p className="text-sm">Always Agent Baseline: {toUsd(agentBaselineCost)}</p>
-            <p className="text-sm text-emerald-300">Savings: {toUsd(result ? Math.max(0, agentBaselineCost - result.actualUsd) : 0)}</p>
-          </article>
-          <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-            <h3 className="font-semibold">Latency & Tokens</h3>
-            <p className="mt-2 text-sm">Latency: {toMs(result?.latencyMs)}</p>
-            <p className="text-sm">Tokens: {toInt(result?.tokenUsage)}</p>
-            <p className="text-sm">Retries: {result?.retryCount ?? 0}</p>
-          </article>
-          <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-            <h3 className="font-semibold">Confidence</h3>
-            <div className="mt-3 h-3 rounded bg-slate-700">
-              <div className="h-3 rounded bg-emerald-400" style={{ width: `${Math.round((result?.confidence ?? 0) * 100)}%` }} />
-            </div>
-            <p className="mt-2 text-sm">{toPct(result?.confidence)}</p>
-          </article>
-        </section>
+        <CostIntelligenceDashboard history={history} routes={routes} traces={traces} summary={summary} metrics={metrics} />
 
         <section className="grid gap-4 lg:grid-cols-2">
           <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">

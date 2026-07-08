@@ -1,6 +1,30 @@
 # Adaptive AI Orchestrator (AIO)
 
-Enterprise orchestration platform that routes each request to the cheapest acceptable execution path:
+Adaptive AI Orchestrator is an enterprise routing platform that selects the **cheapest acceptable execution strategy** for each request instead of defaulting to expensive agent workflows.
+
+## Hackathon Narrative
+
+### Problem
+Most enterprise AI platforms route too many tasks to large models or agents.  
+That creates unnecessary cost, latency, and operational risk.
+
+### Current Industry Approach
+- One-size-fits-all model selection
+- Agent-first execution even for simple tasks
+- Limited traceability for why a route was selected
+
+### Adaptive AI Orchestrator Approach
+- Evaluate each request by complexity, reasoning depth, context size, privacy, cost, and latency
+- Score all strategies
+- Select the lowest-cost strategy that still meets confidence and quality constraints
+
+### Benefits
+- Lower operating cost
+- Faster response time
+- Better explainability and governance
+- Clear demo evidence vs always-agent baselines
+
+## Execution Strategies
 
 - `DETERMINISTIC_CODE`
 - `AI_SKILL`
@@ -10,20 +34,6 @@ Enterprise orchestration platform that routes each request to the cheapest accep
 - `SINGLE_AGENT`
 - `MULTI_AGENT_WORKFLOW`
 
-The key outcome is measurable savings versus always using agents, while preserving confidence and latency guardrails.
-
-## What Was Improved
-
-- End-to-end orchestration flow implemented (`Controller -> Service -> Orchestrator -> Decision -> Execution Path -> Cost/Learning/Analytics`).
-- Duplicate logic reduced with centralized cost estimation and shared strategy contracts.
-- Dependency injection hardened with concrete adapters for every interface.
-- Structured logging added across decision and execution events.
-- Validation and global exception handling added for API reliability.
-- Correlation IDs, execution tracing, metrics, and health indicators added for observability.
-- Analytics and scenario benchmarking APIs added.
-- React dashboard upgraded with live flow, decision scoring, savings, and benchmark views.
-- Test coverage added for decision routing, orchestration APIs, and integration flow.
-
 ## Architecture
 
 ### End-to-End Flow
@@ -31,110 +41,109 @@ The key outcome is measurable savings versus always using agents, while preservi
 ```mermaid
 flowchart TD
     A["User Prompt"] --> B["Decision Engine"]
-    B --> C{"Execution Strategy"}
+    B --> C{"Select Cheapest Acceptable Strategy"}
     C --> C1["CODE"]
     C --> C2["SKILL"]
     C --> C3["SMALL/MEDIUM/LARGE LLM"]
-    C --> C4["AGENT/MULTI-AGENT"]
-    C1 --> D["Cost Engine"]
+    C --> C4["AGENT/MULTI_AGENT"]
+    C1 --> D["Execution"]
     C2 --> D
     C3 --> D
     C4 --> D
-    D --> E["Learning Engine"]
-    E --> F["Analytics"]
-    F --> G["Dashboard"]
+    D --> E["Cost Intelligence"]
+    E --> F["Learning Engine"]
+    F --> G["Analytics + Observability"]
+    G --> H["Executive Dashboard"]
 ```
 
 ### Component Diagram
 
 ```mermaid
 flowchart LR
-    UI["React Dashboard"] --> API["Orchestration REST API"]
-    API --> SVC["OrchestrationService"]
-    SVC --> ORCH["AdaptiveOrchestrator"]
-    ORCH --> DEC["DecisionEngine"]
+    UI["React UI: Landing, Executive, Live Orchestrator"] --> API["REST Controllers"]
+    API --> SERVICE["OrchestrationService"]
+    SERVICE --> ORCH["AdaptiveOrchestrator"]
+    ORCH --> DEC["DecisionEngine + StrategySelector"]
     DEC --> COST["CostEstimator + CostPolicy"]
-    DEC --> ANALYTICS["DecisionAnalytics"]
     ORCH --> PATHS{"ExecutionPathRegistry"}
-    PATHS --> CODE["Deterministic Path"]
-    PATHS --> SKILL["Skill Path"]
-    PATHS --> LLM["LLM Paths"]
-    PATHS --> AGENTS["Agent Paths"]
-    ORCH --> REPO["Decision/Execution Repositories"]
-    SVC --> LEARN["LearningEngine"]
-    SVC --> TRACE["ExecutionTraceService"]
-    TRACE --> OBS["Observability APIs + Health"]
+    PATHS --> CODE["DeterministicCodeExecutionPath"]
+    PATHS --> SKILL["SkillExecutionPath"]
+    PATHS --> LLM["Small/Medium/Large LLM Paths"]
+    PATHS --> AGENT["Single + Multi Agent Paths"]
+    SERVICE --> LEARN["LearningEngine"]
+    SERVICE --> TRACE["ExecutionTraceService"]
+    TRACE --> OBS["ObservabilityController"]
+    API --> ANALYTICS["AnalyticsController"]
 ```
 
-### Sequence (Request Execution)
+### Request Sequence
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant C as OrchestrationController
-    participant S as DefaultOrchestrationService
-    participant O as DefaultAdaptiveOrchestrator
-    participant D as DefaultDecisionEngine
-    participant P as ExecutionPath
-    participant L as LearningEngine
-    participant T as TraceService
+    participant User
+    participant Controller as OrchestrationController
+    participant Service as DefaultOrchestrationService
+    participant Orchestrator as DefaultAdaptiveOrchestrator
+    participant Decision as DefaultDecisionEngine
+    participant Path as ExecutionPath
+    participant Learn as LearningEngine
+    participant Trace as ExecutionTraceService
 
-    U->>C: POST /api/v1/orchestrator/execute
-    C->>S: execute(request)
-    S->>T: start(correlationId)
-    S->>O: decide(request)
-    O->>D: evaluate(request)
-    D-->>O: StrategyDecision
-    O-->>S: StrategyDecision
-    S->>T: markDecision()
-    S->>O: execute(request, decision)
-    O->>P: execute(request)
-    P-->>O: OrchestrationResult
-    O-->>S: OrchestrationResult
-    S->>L: learn(decision, result)
-    S->>T: markResult()
-    S-->>C: OrchestrationResult
-    C-->>U: 200 OK
+    User->>Controller: POST /api/v1/orchestrator/execute
+    Controller->>Service: execute(request)
+    Service->>Trace: start(requestId, correlationId)
+    Service->>Orchestrator: decide(request)
+    Orchestrator->>Decision: evaluate(request)
+    Decision-->>Orchestrator: StrategyDecision
+    Orchestrator-->>Service: StrategyDecision
+    Service->>Orchestrator: execute(request, decision)
+    Orchestrator->>Path: execute(request)
+    Path-->>Orchestrator: OrchestrationResult
+    Orchestrator-->>Service: OrchestrationResult
+    Service->>Learn: learn(decision, result)
+    Service->>Trace: markResult(result)
+    Service-->>Controller: OrchestrationResult
+    Controller-->>User: 200 OK
 ```
 
-## Why Skills vs Agents Works
+## Frontend Experience
 
-- Skills are reusable, stateless, and low-latency: ideal for tasks like summarization, classification, email drafting, formatting.
-- Agents are expensive due to iterative reasoning, planning loops, memory/tool orchestration, and retries.
-- The decision engine enforces cheapest-acceptable routing first, and only escalates to large models/agents when complexity or quality risk requires it.
-- Scenario APIs expose savings versus always-agent routing.
+### 1. Landing Page
+Explains:
+- Problem
+- Current industry approach
+- Adaptive orchestrator approach
+- Benefits
+- Cost and latency savings
+- Architecture
+- Demo flow
+- Technology stack
 
-## Project Structure
+### 2. Executive Dashboard
+Shows:
+- KPI cards (cost, latency, success, savings)
+- Route distribution
+- Efficiency indicators
+- Timeline snapshot
+- Scenario benchmark highlights
 
-```text
-adaptive-ai-orchestrator/
-  backend/src/main/java/com/aio/orchestrator/
-    controller/                # REST adapters + exception advice
-    service/                   # Use-case orchestration service
-    orchestrator/              # Decision + execution coordination
-    decision/                  # Decision interfaces + heuristic implementations
-    cost/                      # Cost policy + estimator
-    skills/                    # Skill contracts + runtime implementations
-    llm/                       # LLM gateway contracts + implementations
-    agents/                    # Agent runtime contracts + implementations
-    repository/                # Replaceable persistence interfaces + in-memory adapters
-    analytics/                 # Summary analytics + learning engine
-    telemetry/                 # Structured logs, correlation, health
-    model/                     # Domain models
-    config/                    # Configuration properties + web config
-  frontend/src/
-    features/orchestration/    # Dashboard feature
-    shared/contracts/          # API contracts
-```
+### 3. Live Orchestrator Dashboard
+Includes:
+- Prompt execution
+- Live execution visualization
+- Explainable AI panel
+- Cost intelligence dashboard
+- Demo center with one-click scenarios
+- Timeline, learning trends, benchmark table
 
-## API Reference
+## API Documentation
 
 Base URL: `http://localhost:8080/api/v1/orchestrator`
 
-### Execution
-
+### Execute Request
 - `POST /execute`
-- Body:
+
+Example body:
 
 ```json
 {
@@ -148,42 +157,80 @@ Base URL: `http://localhost:8080/api/v1/orchestrator`
 }
 ```
 
-### Analytics
-
+### Analytics APIs
 - `GET /analytics/summary`
 - `GET /analytics/paths`
 - `GET /analytics/history?limit=50`
 - `GET /analytics/learning?limit=50`
 - `GET /analytics/scenarios`
 
-### Observability
-
+### Observability APIs
 - `GET /observability/traces?limit=20`
 - `GET /observability/traces/{requestId}`
 - `GET /observability/metrics`
 - `GET /actuator/health`
 
-## Demo Scenarios Included
+## Demo Center Scenarios
 
-- Scenario 1: Simple JSON validation -> `DETERMINISTIC_CODE`
-- Scenario 2: Email drafting -> `AI_SKILL`
-- Scenario 3: Research question -> `LARGE_LLM`
-- Scenario 4: Travel planning -> `SINGLE_AGENT`
-- Scenario 5: Enterprise migration planning -> `MULTI_AGENT_WORKFLOW`
+One-click demo scenarios:
+1. Validate JSON
+2. Generate SQL
+3. Translate Text
+4. Summarize Report
+5. Draft Email
+6. Travel Planner
+7. Enterprise Architecture Review
+8. Research Topic
+9. Medical Summary
+10. Financial Analysis
 
-Each scenario returns:
+Demo Center supports:
+- single scenario execution
+- run-all automation
+- live routing status
+- execution metrics
+- cost and latency savings tracking
+- presentation mode for finale demos
 
-- reason for routing
-- estimated vs actual cost
-- estimated vs actual latency
-- token usage
-- savings compared to always using agents
+## Hackathon Finale Demo Script
+
+1. Open **Landing** and narrate the problem and why always-agent is inefficient.  
+2. Switch to **Executive Dashboard** and show live savings and route distribution.  
+3. Open **Live Orchestrator** and run 2 to 3 single scenarios.  
+4. Run **Run All Scenarios** in Demo Center.  
+5. Highlight Explainable AI reasoning and rejected alternatives.  
+6. Close with cost and latency savings evidence from cost intelligence cards.
+
+## Project Structure
+
+```text
+adaptive-ai-orchestrator/
+  backend/src/main/java/com/aio/orchestrator/
+    controller/
+    service/
+    orchestrator/
+    decision/
+    cost/
+    skills/
+    llm/
+    agents/
+    repository/
+    model/
+    config/
+    telemetry/
+    analytics/
+  frontend/src/
+    app/
+    features/orchestration/components/
+    shared/contracts/
+```
 
 ## Run Locally
 
-### Backend (Java 21 + Maven)
+### Backend
 
 ```powershell
+cd backend
 $env:JAVA_HOME="C:\path\to\jdk-21"
 $env:Path="$env:JAVA_HOME\bin;$env:Path"
 mvn clean install
@@ -199,14 +246,20 @@ npm run build
 npm run dev
 ```
 
-## Verification Status
+## Verification Commands
 
-- `mvn clean install`: passing
-- Backend unit/integration tests: passing
-- `npm run build`: passing
-- Dashboard preview HTTP probe: `200 OK` with root element detected
+```powershell
+# backend
+cd backend
+mvn clean install
+
+# frontend
+cd ../frontend
+npm run build
+```
 
 ## Notes
 
-- In this repository snapshot, persistence adapters are in-memory for deterministic integration verification.
-- PostgreSQL/Redis/Kafka connectors are replaceable via existing interfaces and can be swapped without changing controller/service contracts.
+- Existing architecture and backend modules are preserved.
+- Execution paths are replaceable via interfaces and registry.
+- In-memory adapters are used for deterministic local demo behavior.
