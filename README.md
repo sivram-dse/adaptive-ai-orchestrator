@@ -2,6 +2,9 @@
 
 Adaptive AI Orchestrator is an enterprise routing platform that selects the **cheapest acceptable execution strategy** for each request instead of defaulting to expensive agent workflows.
 
+<img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/22c88432-b1a3-4940-9a4e-42108bd3d7c7" />
+
+
 ## Hackathon Narrative
 
 ### Problem
