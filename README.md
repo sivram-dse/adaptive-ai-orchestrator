@@ -24,6 +24,9 @@ That creates unnecessary cost, latency, and operational risk.
 - Better explainability and governance
 - Clear demo evidence vs always-agent baselines
 
+See `docs/BUSINESS_IMPACT_EVIDENCE.md` for reviewer-facing ROI evidence,
+live API snapshots, trial methodology, and prototype claim boundaries.
+
 ## Execution Strategies
 
 - `DETERMINISTIC_CODE`
@@ -203,6 +206,8 @@ Demo Center supports:
 4. Run **Run All Scenarios** in Demo Center.  
 5. Highlight Explainable AI reasoning and rejected alternatives.  
 6. Close with cost and latency savings evidence from cost intelligence cards.
+7. For review evidence, open `docs/BUSINESS_IMPACT_EVIDENCE.md` and show the
+   live API endpoints, trial results, and prototype claim boundaries.
 
 ## Project Structure
 
@@ -230,23 +235,43 @@ adaptive-ai-orchestrator/
 
 ## Run Locally
 
+### Fast Hackathon Demo
+
+This repo includes Windows helper scripts for the portable toolchain under `D:\tools`.
+
+```powershell
+# from repository root
+.\build-local.cmd
+.\run-backend-local.cmd
+.\run-frontend-local.cmd
+```
+
+Open:
+- Frontend: `http://127.0.0.1:5173`
+- Backend health: `http://localhost:8080/actuator/health`
+
+Run the backend first, then the frontend. The frontend supports both `localhost:5173`
+and `127.0.0.1:5173` during local demo.
+
 ### Backend
 
 ```powershell
 cd backend
-$env:JAVA_HOME="C:\path\to\jdk-21"
-$env:Path="$env:JAVA_HOME\bin;$env:Path"
-mvn clean install
-mvn spring-boot:run
+$env:JAVA_HOME="D:\tools\jdk-21"
+$env:Path="$env:JAVA_HOME\bin;D:\tools\maven\bin;$env:Path"
+mvn clean package
+java -jar target\adaptive-ai-orchestrator-0.0.1-SNAPSHOT.jar `
+  --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 ```
 
 ### Frontend
 
 ```powershell
 cd frontend
+$env:Path="D:\tools\nodejs;$env:Path"
 npm install
 npm run build
-npm run dev
+npm run dev -- --host 127.0.0.1
 ```
 
 ## Verification Commands
@@ -254,10 +279,13 @@ npm run dev
 ```powershell
 # backend
 cd backend
+$env:JAVA_HOME="D:\tools\jdk-21"
+$env:Path="$env:JAVA_HOME\bin;D:\tools\maven\bin;$env:Path"
 mvn clean install
 
 # frontend
 cd ../frontend
+$env:Path="D:\tools\nodejs;$env:Path"
 npm run build
 ```
 

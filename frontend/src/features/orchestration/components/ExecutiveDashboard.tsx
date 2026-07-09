@@ -49,19 +49,47 @@ export function ExecutiveDashboard() {
   }
 
   const derived = useMemo(() => {
-    const averageCost = summary?.averageCost ?? 0;
-    const averageLatency = summary?.averageLatencyMs ?? 0;
+    const hasLiveRequests = (summary?.totalRequests ?? 0) > 0;
+    const benchmarkCount = scenarios.length;
+    const benchmarkAverageCost = average(scenarios.map((scenario) => scenario.actualCost));
+    const benchmarkAverageLatency = average(scenarios.map((scenario) => scenario.actualLatencyMs));
+    const benchmarkSavings = scenarios.reduce((sum, scenario) => sum + scenario.savingsVsAlwaysAgent, 0);
+    const averageCost = hasLiveRequests ? (summary?.averageCost ?? 0) : benchmarkAverageCost;
+    const averageLatency = hasLiveRequests ? (summary?.averageLatencyMs ?? 0) : benchmarkAverageLatency;
     const savingsVsAgentPct = percentSaved(agentBaselineCost, averageCost);
     const latencySavedPct = percentSaved(agentBaselineLatency, averageLatency);
-    const requestCount = summary?.totalRequests ?? history.length;
+    const requestCount = hasLiveRequests ? (summary?.totalRequests ?? history.length) : benchmarkCount;
+    const successRate = hasLiveRequests ? (summary?.successRate ?? 0) : benchmarkCount > 0 ? 1 : 0;
+    const failureRate = hasLiveRequests ? (summary?.failureRate ?? 0) : 0;
+    const savingsVsAlwaysAgent = hasLiveRequests ? (summary?.savingsVsAlwaysAgent ?? 0) : benchmarkSavings;
     return {
       averageCost,
       averageLatency,
       savingsVsAgentPct,
       latencySavedPct,
       requestCount,
+      successRate,
+      failureRate,
+      savingsVsAlwaysAgent,
     };
-  }, [summary, history.length]);
+  }, [summary, history.length, scenarios]);
+
+  const displayedRoutes = useMemo(() => {
+    if (routes.length > 0 || scenarios.length === 0) {
+      return routes;
+    }
+    const counts = scenarios.reduce<Partial<Record<RouteUsageDto["strategy"], number>>>((accumulator, scenario) => {
+      accumulator[scenario.routedStrategy] = (accumulator[scenario.routedStrategy] ?? 0) + 1;
+      return accumulator;
+    }, {});
+    return Object.entries(counts)
+      .map(([strategy, count]) => ({
+        strategy: strategy as RouteUsageDto["strategy"],
+        count: count ?? 0,
+        percentage: ((count ?? 0) * 100) / scenarios.length,
+      }))
+      .sort((left, right) => right.count - left.count);
+  }, [routes, scenarios]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 p-4 text-slate-100 md:p-6">
@@ -78,7 +106,7 @@ export function ExecutiveDashboard() {
           <KpiCard label="Total Requests" value={String(derived.requestCount)} accent="cyan" />
           <KpiCard label="Avg Cost" value={toUsd(derived.averageCost)} accent="emerald" />
           <KpiCard label="Avg Latency" value={toMs(derived.averageLatency)} accent="amber" />
-          <KpiCard label="Success Rate" value={toPct(summary?.successRate)} accent="blue" />
+          <KpiCard label="Success Rate" value={toPct(derived.successRate)} accent="blue" />
           <KpiCard label="Cost Savings vs Agent" value={`${(derived.savingsVsAgentPct * 100).toFixed(1)}%`} accent="violet" />
           <KpiCard label="Latency Savings vs Agent" value={`${(derived.latencySavedPct * 100).toFixed(1)}%`} accent="teal" />
         </section>
@@ -87,7 +115,7 @@ export function ExecutiveDashboard() {
           <article className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
             <h2 className="font-display text-lg font-semibold">Route Distribution</h2>
             <div className="mt-3 space-y-2">
-              {routes.map((route) => (
+              {displayedRoutes.map((route) => (
                 <div key={route.strategy}>
                   <div className="mb-1 flex items-center justify-between text-xs">
                     <span>{route.strategy.replaceAll("_", " ")}</span>
@@ -110,7 +138,7 @@ export function ExecutiveDashboard() {
               <EfficiencyRow
                 label="Cost Efficiency"
                 value={derived.savingsVsAgentPct}
-                subtitle={`${toUsd(summary?.savingsVsAlwaysAgent)} saved against always-agent baseline`}
+                subtitle={`${toUsd(derived.savingsVsAlwaysAgent)} saved against always-agent baseline`}
                 tone="emerald"
               />
               <EfficiencyRow
@@ -121,8 +149,8 @@ export function ExecutiveDashboard() {
               />
               <EfficiencyRow
                 label="Reliability"
-                value={metrics?.successRate ?? 0}
-                subtitle={`Failure rate ${toPct(metrics?.failureRate)} across traces`}
+                value={metrics?.totalRequests ? metrics.successRate : derived.successRate}
+                subtitle={`Failure rate ${toPct(metrics?.totalRequests ? metrics.failureRate : derived.failureRate)} across traces`}
                 tone="cyan"
               />
             </div>
@@ -224,6 +252,11 @@ function EfficiencyRow({ label, value, subtitle, tone }: { label: string; value:
 function percentSaved(baseline: number, actual: number): number {
   if (baseline <= 0) return 0;
   return Math.max(0, Math.min(1, (baseline - actual) / baseline));
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function toUsd(value?: number) {

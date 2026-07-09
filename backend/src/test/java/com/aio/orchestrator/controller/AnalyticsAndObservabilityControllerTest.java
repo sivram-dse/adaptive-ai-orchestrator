@@ -1,10 +1,12 @@
 package com.aio.orchestrator.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.aio.orchestrator.repository.ExecutionRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -18,6 +20,9 @@ class AnalyticsAndObservabilityControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ExecutionRepository executionRepository;
 
     @Test
     void shouldExposeAnalyticsAndObservabilityApis() throws Exception {
@@ -48,8 +53,13 @@ class AnalyticsAndObservabilityControllerTest {
         mockMvc.perform(get("/api/v1/orchestrator/analytics/history"))
                 .andExpect(status().isOk());
 
+        int historyCountBeforeScenarios = executionRepository.findRecent(5000).size();
+
         mockMvc.perform(get("/api/v1/orchestrator/analytics/scenarios"))
                 .andExpect(status().isOk());
+
+        int historyCountAfterScenarios = executionRepository.findRecent(5000).size();
+        assertEquals(historyCountBeforeScenarios, historyCountAfterScenarios);
 
         mockMvc.perform(get("/api/v1/orchestrator/observability/metrics"))
                 .andExpect(status().isOk())

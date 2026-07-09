@@ -1,6 +1,8 @@
 package com.aio.orchestrator.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,5 +36,14 @@ class OrchestrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.requestId").isNotEmpty())
                 .andExpect(jsonPath("$.strategy").isNotEmpty());
+    }
+
+    @Test
+    void shouldAllowLocalViteDemoOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/orchestrator/execute")
+                        .header("Origin", "http://127.0.0.1:5173")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:5173"));
     }
 }
