@@ -27,6 +27,16 @@ That creates unnecessary cost, latency, and operational risk.
 See `docs/BUSINESS_IMPACT_EVIDENCE.md` for reviewer-facing ROI evidence,
 live API snapshots, trial methodology, and prototype claim boundaries.
 
+## Submission Assets
+
+Reviewer-ready materials are included with the project:
+
+- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.mp4` - under-5-minute project overview video for SharePoint upload
+- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.pptx` - editable source deck for the overview video
+- `outputs/demo-video/adaptive-ai-orchestrator-cover-page.png` - hackathon submission cover image
+- `outputs/demo-video/adaptive-ai-orchestrator-logo-100.png` - 100x100 project logo for submission portals
+- `docs/BUSINESS_IMPACT_EVIDENCE.md` - ROI evidence, trial data, and prototype claim boundaries
+
 ## Execution Strategies
 
 - `DETERMINISTIC_CODE`
