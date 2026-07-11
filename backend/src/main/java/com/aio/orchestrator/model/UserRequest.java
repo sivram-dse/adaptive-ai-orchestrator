@@ -9,6 +9,6 @@ public record UserRequest(
         @NotBlank @Size(max = 80) String tenantId,
         @NotBlank @Size(max = 80) String userId,
         @NotBlank @Size(max = 20000) String payload,
-        Map<String, String> metadata
+        @Size(max = 30) Map<String, String> metadata
 ) {
 }

@@ -3,25 +3,57 @@ spring:
     name: adaptive-ai-orchestrator
   jackson:
     default-property-inclusion: non_null
+  lifecycle:
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:20s}
 
 server:
-  port: 8080
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/problem+json,text/plain,text/html,text/css,application/javascript
   error:
-    include-message: always
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: never
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    com.aio.orchestrator: ${LOG_LEVEL_AIO:INFO}
+    org.springframework.web: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} level=%-5level service=${spring.application.name} correlationId=%X{correlationId:-none} logger=%logger{36} message=%replace(%msg){'[\\r\\n]+',' '}%n"
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Cost-aware runtime routing for enterprise AI workloads
+    version: "@project.version@"
 
 aio:
+  cors:
+    allowed-origin-patterns: ${AIO_CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:5173,http://127.0.0.1:5173,https://*.vercel.app}
   routing:
-    max-acceptable-cost-usd: 0.25
-    min-confidence-threshold: 0.72
-    max-acceptable-latency-ms: 5500
+    max-acceptable-cost-usd: ${AIO_MAX_ACCEPTABLE_COST_USD:0.25}
+    min-confidence-threshold: ${AIO_MIN_CONFIDENCE_THRESHOLD:0.72}
+    max-acceptable-latency-ms: ${AIO_MAX_ACCEPTABLE_LATENCY_MS:5500}
   execution:
-    max-retries: 1
+    max-retries: ${AIO_MAX_RETRIES:1}

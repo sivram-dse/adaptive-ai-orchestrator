@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 @Configuration
-@EnableConfigurationProperties({RoutingProperties.class, ExecutionProperties.class})
+@EnableConfigurationProperties({RoutingProperties.class, ExecutionProperties.class, CorsProperties.class})
 public class ArchitectureConfig {
 
     @Bean

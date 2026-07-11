@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, LoaderCircle, Play, TriangleAlert, X } from "lucide-react";
 import { HttpOrchestrationApi } from "../api/HttpOrchestrationApi";
 import {
   ExecutionAnalyticsSummaryDto,
@@ -32,6 +33,7 @@ export function OrchestrationPage() {
   const [traces, setTraces] = useState<ExecutionTraceSnapshotDto[]>([]);
   const [scenarios, setScenarios] = useState<ScenarioBenchmarkResultDto[]>([]);
   const [learning, setLearning] = useState<LearningSnapshotDto[]>([]);
+  const [toast, setToast] = useState<{ tone: "success" | "error"; message: string } | null>(null);
 
   const selectedTrace = traces.find((trace) => trace.requestId === result?.requestId) ?? traces[0];
 
@@ -43,6 +45,12 @@ export function OrchestrationPage() {
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = window.setTimeout(() => setToast(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const filteredHistory = history.filter((item) => pathFilter === "ALL" || item.strategy === pathFilter);
 
@@ -99,10 +107,16 @@ export function OrchestrationPage() {
         },
       });
       setResult(executed);
+      setToast({
+        tone: "success",
+        message: `Routed to ${executed.strategy.replaceAll("_", " ")} with ${(executed.confidence * 100).toFixed(1)}% confidence.`,
+      });
       await refreshDashboard(false);
       return executed;
     } catch (err) {
-      setError((err as Error).message);
+      const message = (err as Error).message;
+      setError(message);
+      setToast({ tone: "error", message });
       return null;
     } finally {
       setLoading(false);
@@ -120,7 +134,7 @@ export function OrchestrationPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 p-4 text-slate-100 md:p-6">
+    <main className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-900 p-4 text-slate-100 md:p-6">
       <section className="mx-auto max-w-7xl space-y-4">
         <header className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5 shadow-xl backdrop-blur-sm">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Adaptive AI Orchestrator</h1>
@@ -134,13 +148,13 @@ export function OrchestrationPage() {
             <input
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              className="md:col-span-3 rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
+              className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm md:col-span-3"
               placeholder="Enter enterprise prompt"
             />
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
-              className="rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
+              className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
             >
               {["coding", "medical", "finance", "travel", "research", "translation", "summarization", "classification", "analytics", "sql", "email", "reasoning"].map((value) => (
                 <option key={value} value={value}>
@@ -151,7 +165,7 @@ export function OrchestrationPage() {
             <select
               value={difficulty}
               onChange={(event) => setDifficulty(event.target.value)}
-              className="rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
+              className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
             >
               {["easy", "medium", "complex"].map((value) => (
                 <option key={value} value={value}>
@@ -161,13 +175,14 @@ export function OrchestrationPage() {
             </select>
             <button
               disabled={loading}
-              className="rounded-lg bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 disabled:opacity-60"
+              className="inline-flex min-w-0 w-full items-center justify-center gap-2 rounded-md bg-cyan-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-60"
               type="submit"
             >
+              {loading ? <LoaderCircle size={16} className="animate-spin" /> : <Play size={16} />}
               {loading ? "Executing..." : "Run Orchestration"}
             </button>
           </div>
-          {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
+          {error && <p role="alert" className="mt-2 text-xs text-rose-300">{error}</p>}
         </form>
 
         <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -325,7 +340,21 @@ export function OrchestrationPage() {
           </div>
         </section>
       </section>
+      {toast && <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} />}
     </main>
+  );
+}
+
+function Toast({ tone, message, onClose }: { tone: "success" | "error"; message: string; onClose: () => void }) {
+  const success = tone === "success";
+  return (
+    <div role="status" className={`fixed bottom-5 right-5 z-[70] flex max-w-sm items-start gap-3 rounded-md border p-3 shadow-2xl ${success ? "border-emerald-300/40 bg-emerald-950 text-emerald-50" : "border-rose-300/40 bg-rose-950 text-rose-50"}`}>
+      {success ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-300" /> : <TriangleAlert size={18} className="mt-0.5 shrink-0 text-rose-300" />}
+      <p className="text-sm leading-5">{message}</p>
+      <button type="button" onClick={onClose} className="ml-auto text-current opacity-70 hover:opacity-100" title="Dismiss notification" aria-label="Dismiss notification">
+        <X size={16} />
+      </button>
+    </div>
   );
 }
 

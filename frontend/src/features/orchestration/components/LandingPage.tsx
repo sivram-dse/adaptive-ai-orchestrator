@@ -5,14 +5,15 @@ type LandingPageProps = {
 
 export function LandingPage({ onOpenDemo, onOpenExecutive }: LandingPageProps) {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-4 text-slate-100 md:p-6">
+    <main className="min-h-screen bg-slate-950 p-4 text-slate-100 md:p-6">
       <section className="mx-auto max-w-7xl space-y-4">
-        <header className="overflow-hidden rounded-3xl border border-cyan-200/20 bg-slate-900/60 p-6 shadow-[0_25px_70px_rgba(2,12,27,0.45)] backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Hackathon Finale</p>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-white md:text-5xl">
+        <header className="relative min-h-[390px] overflow-hidden border-b border-cyan-200/20 px-2 py-14 md:px-8 md:py-20">
+          <img src="/aio-logo.png" alt="" className="absolute right-4 top-12 h-32 w-32 opacity-25 md:right-16 md:h-44 md:w-44" />
+          <p className="text-xs uppercase text-cyan-200/80">Enterprise AI control plane</p>
+          <h1 className="mt-3 max-w-4xl font-display text-4xl font-bold text-white md:text-6xl">
             Adaptive AI Orchestrator
           </h1>
-          <p className="mt-3 max-w-3xl text-sm text-slate-200/90 md:text-base">
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-200/90 md:text-lg">
             Route each request to the cheapest execution path that still meets quality and latency goals.
             Stop defaulting to costly agents when CODE, SKILL, or a smaller model can do the job faster.
           </p>
@@ -20,15 +21,17 @@ export function LandingPage({ onOpenDemo, onOpenExecutive }: LandingPageProps) {
             <button
               type="button"
               onClick={onOpenDemo}
-              className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300"
+              className="inline-flex items-center gap-2 rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
             >
+              <Play size={16} />
               Launch Live Demo
             </button>
             <button
               type="button"
               onClick={onOpenExecutive}
-              className="rounded-lg border border-cyan-200/30 bg-slate-900/50 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-md border border-cyan-200/30 bg-slate-900/70 px-4 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-slate-800"
             >
+              <BarChart3 size={16} />
               Open Executive Dashboard
             </button>
           </div>
@@ -58,31 +61,31 @@ export function LandingPage({ onOpenDemo, onOpenExecutive }: LandingPageProps) {
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Cost Savings" value="40-90%" subtitle="vs always-agent execution" />
-          <StatCard label="Latency Savings" value="25-80%" subtitle="task-type dependent" />
+          <StatCard label="Cost Reduction" value="35.3%" subtitle="controlled benchmark average" />
+          <StatCard label="Latency Reduction" value="25.1%" subtitle="controlled benchmark average" />
           <StatCard label="Routing Options" value="7 Paths" subtitle="Code, Skill, LLM tiers, Agent tiers" />
           <StatCard label="Observability" value="End-to-End" subtitle="trace, metrics, analytics, learning" />
         </section>
 
         <section className="rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
-          <h2 className="font-display text-xl font-semibold">Architecture</h2>
+          <h2 className="font-display text-xl font-semibold">Runtime Architecture</h2>
           <div className="mt-4 grid gap-2 md:grid-cols-7">
-            <FlowNode label="User Prompt" />
+            <FlowNode label="User" />
             <FlowArrow />
-            <FlowNode label="Decision Engine" />
+            <FlowNode label="Adaptive Decision Engine" />
             <FlowArrow />
-            <FlowNode label="Execution Path" />
+            <FlowNode label="Execution Strategy" />
             <FlowArrow />
-            <FlowNode label="Cost + Learning + Analytics" />
+            <FlowNode label="Trace + Learn" />
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-7">
-            <PathNode label="CODE" />
-            <PathNode label="SKILL" />
-            <PathNode label="SMALL_LLM" />
-            <PathNode label="MEDIUM_LLM" />
-            <PathNode label="LARGE_LLM" />
-            <PathNode label="AGENT" />
-            <PathNode label="MULTI_AGENT" />
+            <PathNode label="Business Rules" />
+            <PathNode label="Reusable Skills" />
+            <PathNode label="Small LLM" />
+            <PathNode label="Medium LLM" />
+            <PathNode label="Large LLM" />
+            <PathNode label="Single Agent" />
+            <PathNode label="Multi Agent" />
           </div>
         </section>
 
@@ -110,8 +113,8 @@ export function LandingPage({ onOpenDemo, onOpenExecutive }: LandingPageProps) {
             <div className="mt-3 grid gap-2 text-sm text-slate-200/90">
               <TechItem label="Backend" value="Java 21, Spring Boot 3, Maven" />
               <TechItem label="Frontend" value="React, TailwindCSS" />
-              <TechItem label="Data" value="PostgreSQL, Redis, Kafka (optional)" />
-              <TechItem label="AI" value="OpenAI Responses API, Skills, Agent Runtime" />
+              <TechItem label="Data" value="In-memory demo stores; PostgreSQL, Redis, and Kafka ready" />
+              <TechItem label="AI" value="Deterministic demo adapters with replaceable model and agent gateways" />
               <TechItem label="Architecture" value="Clean Architecture, replaceable execution paths" />
             </div>
           </article>
@@ -199,3 +202,4 @@ function Icon({ kind }: { kind: "problem" | "industry" | "adaptive" | "benefits"
     </svg>
   );
 }
+import { BarChart3, Play } from "lucide-react";

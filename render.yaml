@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: adaptive-ai-orchestrator
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: codex/aio-integration-final
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: AIO_CORS_ALLOWED_ORIGIN_PATTERNS
+        value: https://adaptive-ai-orchestrator.vercel.app,https://*.vercel.app
+      - key: LOG_LEVEL_ROOT
+        value: INFO
+      - key: LOG_LEVEL_AIO
+        value: INFO

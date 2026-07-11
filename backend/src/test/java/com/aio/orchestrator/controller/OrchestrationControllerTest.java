@@ -46,4 +46,33 @@ class OrchestrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:5173"));
     }
+
+    @Test
+    void shouldAllowVercelPreviewOrigin() throws Exception {
+        mockMvc.perform(options("/api/v1/orchestrator/execute")
+                        .header("Origin", "https://adaptive-ai-orchestrator-preview.vercel.app")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(
+                        "Access-Control-Allow-Origin",
+                        "https://adaptive-ai-orchestrator-preview.vercel.app"));
+    }
+
+    @Test
+    void shouldReturnProductionSecurityHeaders() throws Exception {
+        mockMvc.perform(post("/api/v1/orchestrator/execute")
+                        .header("X-Forwarded-Proto", "https")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tenantId": "tenant",
+                                  "userId": "user",
+                                  "payload": "Classify this request"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Strict-Transport-Security", "max-age=31536000; includeSubDomains"));
+    }
 }

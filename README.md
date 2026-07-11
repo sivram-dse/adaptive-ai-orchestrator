@@ -1,46 +1,80 @@
-# Adaptive AI Orchestrator (AIO)
+# Adaptive AI Orchestrator
 
-Adaptive AI Orchestrator is an enterprise routing platform that selects the **cheapest acceptable execution strategy** for each request instead of defaulting to expensive agent workflows.
+Adaptive AI Orchestrator is a cost-aware enterprise AI control plane. It evaluates each request and selects the lowest-cost execution strategy that still satisfies quality, confidence, latency, and policy requirements.
 
 <img width="1672" height="941" alt="image" src="https://github.com/user-attachments/assets/22c88432-b1a3-4940-9a4e-42108bd3d7c7" />
 
+The hackathon prototype preserves a clean orchestration architecture across deterministic business rules, reusable skills, simulated LLM tiers, single-agent reasoning, and multi-agent workflows. It is self-contained and does not require model credentials, cloud databases, or paid APIs.
 
 ## Hackathon Narrative
 
-### Problem
-Most enterprise AI platforms route too many tasks to large models or agents.  
-That creates unnecessary cost, latency, and operational risk.
+![Adaptive AI Orchestrator landing page](docs/images/landing-page.png)
 
-### Current Industry Approach
-- One-size-fits-all model selection
-- Agent-first execution even for simple tasks
-- Limited traceability for why a route was selected
+## Demo Access
 
-### Adaptive AI Orchestrator Approach
-- Evaluate each request by complexity, reasoning depth, context size, privacy, cost, and latency
-- Score all strategies
-- Select the lowest-cost strategy that still meets confidence and quality constraints
+| Service | Target URL | Status |
+|---|---|---|
+| Frontend | `https://adaptive-ai-orchestrator.vercel.app` | Deployment-ready; created from the Vercel account |
+| Backend | `https://adaptive-ai-orchestrator.onrender.com` | Deployment-ready; created from the Render account |
+| Health | `https://adaptive-ai-orchestrator.onrender.com/health` | Available after backend deployment |
 
-### Benefits
-- Lower operating cost
-- Faster response time
-- Better explainability and governance
-- Clear demo evidence vs always-agent baselines
+See [deployment.md](deployment.md) for the exact free-tier deployment and verification procedure. Platform names are globally shared, so the final hostname can differ if a requested name is already taken.
 
-See `docs/BUSINESS_IMPACT_EVIDENCE.md` for reviewer-facing ROI evidence,
-live API snapshots, trial methodology, and prototype claim boundaries.
+## Business Value
 
-## Submission Assets
+Controlled prototype trials across representative workloads produced:
 
-Reviewer-ready materials are included with the project:
+| Metric | Observed result |
+|---|---:|
+| Executions | 15 across 3 repeated trials |
+| Average execution cost | `$0.1800` baseline to `$0.1164` adaptive |
+| Cost reduction | `35.3%` |
+| Average latency | `4.30 s` baseline to `3.22 s` adaptive |
+| Latency reduction | `25.1%` |
+| Controlled demo success | `100%` |
+| Average confidence | `94%` |
+| Projected savings at 1M similar requests | `$63.6K` |
 
-- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.mp4` - under-5-minute project overview video for SharePoint upload
-- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.pptx` - editable source deck for the overview video
-- `outputs/demo-video/adaptive-ai-orchestrator-cover-page.png` - hackathon submission cover image
-- `outputs/demo-video/adaptive-ai-orchestrator-logo-100.png` - 100x100 project logo for submission portals
-- `docs/BUSINESS_IMPACT_EVIDENCE.md` - ROI evidence, trial data, and prototype claim boundaries
+These are reproducible prototype measurements from deterministic local adapters, not production provider invoices or guaranteed future returns. The full methodology, raw trial summaries, formulas, and claim boundaries are documented in [Business Impact Evidence](docs/BUSINESS_IMPACT_EVIDENCE.md).
 
-## Execution Strategies
+## Architecture
+
+```mermaid
+flowchart LR
+    USER["User"] --> UI["React / Vite"]
+    UI --> API["Spring Boot API"]
+    API --> ENGINE["Adaptive Decision Engine"]
+    ENGINE --> RULES["Business Rules"]
+    ENGINE --> SKILLS["Skills"]
+    ENGINE --> LLM["Small / Medium / Large LLM"]
+    ENGINE --> AGENT["Single Agent"]
+    ENGINE --> MULTI["Multi Agent"]
+    RULES --> OBS["Trace, Analytics, Learning"]
+    SKILLS --> OBS
+    LLM --> OBS
+    AGENT --> OBS
+    MULTI --> OBS
+    OBS --> UI
+```
+
+The detailed component, request-sequence, and cloud-deployment diagrams are in [Architecture](docs/ARCHITECTURE.md).
+
+## Adaptive Decision Engine
+
+For every request, the engine:
+
+1. Normalizes the request and creates request and correlation identifiers.
+2. Classifies task complexity from prompt signals and optional metadata.
+3. Ranks all eligible execution strategies.
+4. Estimates cost, latency, token usage, and confidence.
+5. Applies configured policy, quality, and confidence gates.
+6. Selects the lowest-cost acceptable route.
+7. Executes through the existing path registry.
+8. Records the rationale, rejected alternatives, trace, analytics, and learning snapshot.
+
+The engine does not choose the cheapest route blindly. A more capable strategy is selected when a lower-cost candidate cannot satisfy the request constraints.
+
+### Execution Strategies
 
 - `DETERMINISTIC_CODE`
 - `AI_SKILL`
@@ -50,116 +84,127 @@ Reviewer-ready materials are included with the project:
 - `SINGLE_AGENT`
 - `MULTI_AGENT_WORKFLOW`
 
-## Architecture
+## Product Experience
 
-### End-to-End Flow
+- SaaS-style landing, executive, and live-orchestrator routes
+- Responsive dark enterprise interface with accessible keyboard focus
+- Sample enterprise prompts and one-click demo scenarios
+- Animated request-to-route decision visualization
+- Confidence, cost, latency, tokens, and savings dashboards
+- Explainable routing rationale and evaluated-strategy scores
+- Execution history, request timeline, trace steps, and route distribution
+- Loading indicators, success/error toasts, and cloud backend status
+- Render cold-start guidance and health retry
+- GitHub source link and reviewer-friendly footer
 
-```mermaid
-flowchart TD
-    A["User Prompt"] --> B["Decision Engine"]
-    B --> C{"Select Cheapest Acceptable Strategy"}
-    C --> C1["CODE"]
-    C --> C2["SKILL"]
-    C --> C3["SMALL/MEDIUM/LARGE LLM"]
-    C --> C4["AGENT/MULTI_AGENT"]
-    C1 --> D["Execution"]
-    C2 --> D
-    C3 --> D
-    C4 --> D
-    D --> E["Cost Intelligence"]
-    E --> F["Learning Engine"]
-    F --> G["Analytics + Observability"]
-    G --> H["Executive Dashboard"]
+### Screenshots
+
+| Overview | Live Orchestration |
+|---|---|
+| ![Landing page](docs/images/landing-page.png) | ![Live orchestrator](docs/images/orchestrator-dashboard.png) |
+
+![Executive dashboard](docs/images/executive-dashboard.png)
+
+## Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Java 21, Spring Boot 3.3, Maven |
+| Frontend | React 18, TypeScript, Vite 8, Tailwind CSS |
+| Routing | React Router |
+| Operations | Actuator, structured logs, correlation IDs, health checks |
+| CI/CD | GitHub Actions |
+| Backend hosting | Render Free web service with Docker |
+| Frontend hosting | Vercel Hobby static deployment |
+| Prototype storage | Thread-safe in-memory repositories |
+
+PostgreSQL, Redis, and Kafka dependencies represent planned production adapters. They are disabled in the production demo profile and are not required to run or deploy the prototype.
+
+## Local Setup
+
+### Required Tools
+
+- JDK 21
+- Maven 3.9+
+- Node.js 22+
+- Git
+
+### Windows Quick Start
+
+Start the backend and frontend in separate terminals:
+
+```text
+run-backend-local.cmd
+run-frontend-local.cmd
 ```
 
-### Component Diagram
+Open `http://127.0.0.1:5173/`.
 
-```mermaid
-flowchart LR
-    UI["React UI: Landing, Executive, Live Orchestrator"] --> API["REST Controllers"]
-    API --> SERVICE["OrchestrationService"]
-    SERVICE --> ORCH["AdaptiveOrchestrator"]
-    ORCH --> DEC["DecisionEngine + StrategySelector"]
-    DEC --> COST["CostEstimator + CostPolicy"]
-    ORCH --> PATHS{"ExecutionPathRegistry"}
-    PATHS --> CODE["DeterministicCodeExecutionPath"]
-    PATHS --> SKILL["SkillExecutionPath"]
-    PATHS --> LLM["Small/Medium/Large LLM Paths"]
-    PATHS --> AGENT["Single + Multi Agent Paths"]
-    SERVICE --> LEARN["LearningEngine"]
-    SERVICE --> TRACE["ExecutionTraceService"]
-    TRACE --> OBS["ObservabilityController"]
-    API --> ANALYTICS["AnalyticsController"]
+### Manual Start
+
+Backend:
+
+```bash
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
-### Request Sequence
+Frontend:
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Controller as OrchestrationController
-    participant Service as DefaultOrchestrationService
-    participant Orchestrator as DefaultAdaptiveOrchestrator
-    participant Decision as DefaultDecisionEngine
-    participant Path as ExecutionPath
-    participant Learn as LearningEngine
-    participant Trace as ExecutionTraceService
-
-    User->>Controller: POST /api/v1/orchestrator/execute
-    Controller->>Service: execute(request)
-    Service->>Trace: start(requestId, correlationId)
-    Service->>Orchestrator: decide(request)
-    Orchestrator->>Decision: evaluate(request)
-    Decision-->>Orchestrator: StrategyDecision
-    Orchestrator-->>Service: StrategyDecision
-    Service->>Orchestrator: execute(request, decision)
-    Orchestrator->>Path: execute(request)
-    Path-->>Orchestrator: OrchestrationResult
-    Orchestrator-->>Service: OrchestrationResult
-    Service->>Learn: learn(decision, result)
-    Service->>Trace: markResult(result)
-    Service-->>Controller: OrchestrationResult
-    Controller-->>User: 200 OK
+```bash
+cd frontend
+npm ci
+npm run dev
 ```
 
-## Frontend Experience
+The frontend defaults to `http://localhost:8080` when `VITE_API_BASE_URL` is not set.
 
-### 1. Landing Page
-Explains:
-- Problem
-- Current industry approach
-- Adaptive orchestrator approach
-- Benefits
-- Cost and latency savings
-- Architecture
-- Demo flow
-- Technology stack
+## Cloud Deployment
 
-### 2. Executive Dashboard
-Shows:
-- KPI cards (cost, latency, success, savings)
-- Route distribution
-- Efficiency indicators
-- Timeline snapshot
-- Scenario benchmark highlights
+The repository is ready for Git-connected automatic deployments:
 
-### 3. Live Orchestrator Dashboard
-Includes:
-- Prompt execution
-- Live execution visualization
-- Explainable AI panel
-- Cost intelligence dashboard
-- Demo center with one-click scenarios
-- Timeline, learning trends, benchmark table
+1. Connect the repository to Render as a Blueprint. Render uses `render.yaml` and `backend/Dockerfile`.
+2. Connect the repository to Vercel with root directory `frontend`.
+3. Set `VITE_API_BASE_URL` to the deployed Render origin.
+4. Verify `/health`, `/actuator/health`, `/executive`, and `/orchestrator`.
+
+No paid service is configured. Read [Free Cloud Deployment Guide](deployment.md) before deploying, especially the free-tier cold-start and usage notes.
+
+## Environment Configuration
+
+Copy values from [.env.example](.env.example) and [frontend/.env.example](frontend/.env.example).
+
+Key variables:
+
+| Variable | Default or example | Purpose |
+|---|---|---|
+| `PORT` | `8080` locally; supplied by Render | Backend listener port |
+| `SPRING_PROFILES_ACTIVE` | `prod` | Production demo configuration |
+| `AIO_CORS_ALLOWED_ORIGIN_PATTERNS` | Localhost and `*.vercel.app` | Trusted browser origins |
+| `AIO_MAX_ACCEPTABLE_COST_USD` | `0.25` | Routing cost gate |
+| `AIO_MIN_CONFIDENCE_THRESHOLD` | `0.72` | Routing confidence gate |
+| `AIO_MAX_ACCEPTABLE_LATENCY_MS` | `5500` | Routing latency gate |
+| `VITE_API_BASE_URL` | Render service origin | Frontend API origin |
 
 ## API Documentation
 
-Base URL: `http://localhost:8080/api/v1/orchestrator`
+Base path: `/api/v1/orchestrator`
 
-### Execute Request
-- `POST /execute`
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/execute` | Execute a request through adaptive routing |
+| `GET` | `/analytics/summary` | Aggregate execution analytics |
+| `GET` | `/analytics/paths` | Route usage distribution |
+| `GET` | `/analytics/history?limit=50` | Recent execution history |
+| `GET` | `/analytics/learning?limit=50` | Recent learning snapshots |
+| `GET` | `/analytics/scenarios` | Deterministic benchmark scenarios |
+| `GET` | `/observability/traces?limit=20` | Recent execution traces |
+| `GET` | `/observability/traces/{requestId}` | Trace for one request |
+| `GET` | `/observability/metrics` | Trace-derived operational metrics |
+| `GET` | `/health` | Lightweight platform health |
+| `GET` | `/actuator/health` | Spring Boot Actuator health |
 
-Example body:
+Example request:
 
 ```json
 {
@@ -173,137 +218,80 @@ Example body:
 }
 ```
 
-Note: Current hackathon build accepts `tenantId` and `userId` in request body for demo simplicity.  
-Production roadmap moves identity to JWT/SecurityContext with tenant isolation controls.
+`metadata` is optional. The classifier can infer route signals from the payload; metadata provides explicit context when an upstream application already knows it.
 
-### Analytics APIs
-- `GET /analytics/summary`
-- `GET /analytics/paths`
-- `GET /analytics/history?limit=50`
-- `GET /analytics/learning?limit=50`
-- `GET /analytics/scenarios`
+## Production Readiness
 
-### Observability APIs
-- `GET /observability/traces?limit=20`
-- `GET /observability/traces/{requestId}`
-- `GET /observability/metrics`
-- `GET /actuator/health`
+- Environment-driven port, CORS, routing policy, logging, and frontend API origin
+- Graceful Spring Boot shutdown and Render shutdown allowance
+- GZIP response compression and forwarded-header support
+- Global structured API errors with correlation IDs
+- Request-size and query-limit validation
+- Security headers on backend and frontend responses
+- Public and Actuator health endpoints
+- Non-root, memory-aware Java 21 runtime container
+- SPA deep-link rewrites for Vercel
+- Locked frontend dependencies with zero known npm audit findings
+- Backend tests and frontend production build on every push
 
-## Demo Center Scenarios
+## CI/CD
 
-One-click demo scenarios:
-1. Validate JSON
-2. Generate SQL
-3. Translate Text
-4. Summarize Report
-5. Draft Email
-6. Travel Planner
-7. Enterprise Architecture Review
-8. Research Topic
-9. Medical Summary
-10. Financial Analysis
+`.github/workflows/ci.yml` runs two independent jobs for every push and pull request:
 
-Demo Center supports:
-- single scenario execution
-- run-all automation
-- live routing status
-- execution metrics
-- cost and latency savings tracking
-- presentation mode for finale demos
+- `mvn verify` on Java 21
+- `npm ci`, `npm audit --audit-level=high`, and `npm run build` on Node 22
 
-## Hackathon Finale Demo Script
+Render deploys after checks pass. Vercel creates production or preview deployments from the connected Git branch.
 
-1. Open **Landing** and narrate the problem and why always-agent is inefficient.  
-2. Switch to **Executive Dashboard** and show live savings and route distribution.  
-3. Open **Live Orchestrator** and run 2 to 3 single scenarios.  
-4. Run **Run All Scenarios** in Demo Center.  
-5. Highlight Explainable AI reasoning and rejected alternatives.  
-6. Close with cost and latency savings evidence from cost intelligence cards.
-7. For review evidence, open `docs/BUSINESS_IMPACT_EVIDENCE.md` and show the
-   live API endpoints, trial results, and prototype claim boundaries.
+## Hackathon Highlights
 
-## Project Structure
+- Demonstrates runtime selection rather than static model routing
+- Combines deterministic, model, and agent execution behind one contract
+- Makes every selection explainable and observable
+- Quantifies prototype cost and latency impact with repeatable evidence
+- Runs without external credentials, reducing judge setup risk
+- Deploys entirely on free infrastructure for browser-only evaluation
+- Preserves extension points for enterprise models, skills, agents, policies, and governance
+
+## Current Prototype Boundaries
+
+- Model and agent paths are deterministic demo adapters, not live provider calls.
+- Analytics and learning history are in memory and reset on service restart.
+- Free Render instances sleep after inactivity, so the first request can be slow.
+- Authentication, tenant isolation, persistent storage, budgets, and enterprise policy administration are roadmap capabilities.
+- Vercel Hobby use must remain consistent with its current non-commercial terms and organizational policy.
+
+## Roadmap
+
+- Register enterprise model providers, tools, skills, and agents
+- Persist execution history in PostgreSQL
+- Add Redis caching and Kafka event streaming
+- Introduce tenant isolation, RBAC, budget policies, and model allowlists
+- Add data-sensitivity routing and compliance controls
+- Train route optimization from outcome quality and user feedback
+- Add production SLOs, distributed tracing, and provider failover
+
+## Repository Structure
 
 ```text
-adaptive-ai-orchestrator/
-  backend/src/main/java/com/aio/orchestrator/
-    controller/
-    service/
-    orchestrator/
-    decision/
-    cost/
-    skills/
-    llm/
-    agents/
-    repository/
-    model/
-    config/
-    telemetry/
-    analytics/
-  frontend/src/
-    app/
-    features/orchestration/components/
-    shared/contracts/
+backend/                    Spring Boot API and orchestration runtime
+frontend/                   React/Vite enterprise experience
+.github/workflows/ci.yml    Build, test, audit, and package pipeline
+docs/                       Architecture and business-impact evidence
+outputs/demo-video/         Project overview video, deck, and submission assets
+render.yaml                 Render Blueprint
+deployment.md               Free cloud deployment runbook
 ```
 
-## Run Locally
+## Submission Assets
 
-### Fast Hackathon Demo
+- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.mp4`
+- `outputs/demo-video/adaptive-ai-orchestrator-project-overview.pptx`
+- `outputs/demo-video/cloud-demo/demo.mp4` - 4:12 live browser walkthrough with narration
+- `outputs/demo-video/adaptive-ai-orchestrator-cover-page.png`
+- `outputs/demo-video/adaptive-ai-orchestrator-logo-100.png`
+- `docs/BUSINESS_IMPACT_EVIDENCE.md`
 
-This repo includes Windows helper scripts for the portable toolchain under `D:\tools`.
+## Intellectual Property Notice
 
-```powershell
-# from repository root
-.\build-local.cmd
-.\run-backend-local.cmd
-.\run-frontend-local.cmd
-```
-
-Open:
-- Frontend: `http://127.0.0.1:5173`
-- Backend health: `http://localhost:8080/actuator/health`
-
-Run the backend first, then the frontend. The frontend supports both `localhost:5173`
-and `127.0.0.1:5173` during local demo.
-
-### Backend
-
-```powershell
-cd backend
-$env:JAVA_HOME="D:\tools\jdk-21"
-$env:Path="$env:JAVA_HOME\bin;D:\tools\maven\bin;$env:Path"
-mvn clean package
-java -jar target\adaptive-ai-orchestrator-0.0.1-SNAPSHOT.jar `
-  --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-```
-
-### Frontend
-
-```powershell
-cd frontend
-$env:Path="D:\tools\nodejs;$env:Path"
-npm install
-npm run build
-npm run dev -- --host 127.0.0.1
-```
-
-## Verification Commands
-
-```powershell
-# backend
-cd backend
-$env:JAVA_HOME="D:\tools\jdk-21"
-$env:Path="$env:JAVA_HOME\bin;D:\tools\maven\bin;$env:Path"
-mvn clean install
-
-# frontend
-cd ../frontend
-$env:Path="D:\tools\nodejs;$env:Path"
-npm run build
-```
-
-## Notes
-
-- Existing architecture and backend modules are preserved.
-- Execution paths are replaceable via interfaces and registry.
-- In-memory adapters are used for deterministic local demo behavior.
+This repository is shared for authorized hackathon evaluation. No open-source license is granted. Reuse, redistribution, or commercial use requires permission from the project owner and must follow applicable HCLTech intellectual-property policies.

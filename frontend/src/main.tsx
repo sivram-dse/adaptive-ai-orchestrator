@@ -1,10 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import { AppShell } from "./app/AppShell";
 import "./app/styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AppShell />
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   </React.StrictMode>
 );

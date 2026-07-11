@@ -1,44 +1,94 @@
-# AIO Architecture
+# Adaptive AI Orchestrator Architecture
 
-## Core Principles
+## Runtime Architecture
 
-1. Route to the cheapest acceptable strategy, not the most powerful by default.
-2. Keep all execution paths replaceable behind interfaces.
-3. Isolate business logic from controllers.
-4. Capture telemetry and learning feedback after every execution.
+```mermaid
+flowchart TD
+    USER["User or enterprise application"] --> UI["React / Vite experience"]
+    UI --> API["Spring Boot REST API"]
+    API --> SERVICE["Orchestration service"]
+    SERVICE --> ENGINE["Adaptive decision engine"]
 
-## Runtime Decision Flow
+    ENGINE --> CLASSIFIER["Complexity classifier"]
+    ENGINE --> SELECTOR["Strategy selector"]
+    ENGINE --> POLICY["Cost and quality policy"]
+    ENGINE --> ESTIMATOR["Cost, latency, and confidence estimator"]
 
-1. Validate and normalize request (`requestId`, `correlationId`, metadata defaults).
-2. Classify complexity and compute weighted strategy scores.
-3. Apply policy constraints (cost, confidence, latency, determinism/safety).
-4. Select lowest-cost acceptable strategy.
-5. Execute through `ExecutionPathRegistry` and path-specific adapter.
-6. Persist decisions/results, publish structured telemetry, update learning snapshots.
-7. Expose analytics and traces to dashboard.
+    ENGINE --> REGISTRY{"Execution path registry"}
+    REGISTRY --> RULES["Deterministic business rules"]
+    REGISTRY --> SKILLS["Reusable AI skills"]
+    REGISTRY --> SMALL["Small LLM"]
+    REGISTRY --> MEDIUM["Medium LLM"]
+    REGISTRY --> LARGE["Large LLM"]
+    REGISTRY --> AGENT["Single agent"]
+    REGISTRY --> MULTI["Multi-agent workflow"]
 
-## Key Replaceable Ports
+    RULES --> RESULT["Orchestration result"]
+    SKILLS --> RESULT
+    SMALL --> RESULT
+    MEDIUM --> RESULT
+    LARGE --> RESULT
+    AGENT --> RESULT
+    MULTI --> RESULT
 
-- `service.OrchestrationService`
-- `orchestrator.AdaptiveOrchestrator`
-- `orchestrator.ExecutionPathRegistry`
-- `decision.DecisionEngine`
-- `cost.CostEstimator` / `cost.CostPolicy`
-- `skills.SkillRegistry`
-- `llm.LanguageModelGateway` tiers
-- `agents.SingleAgentCoordinator` / `agents.MultiAgentCoordinator`
-- `repository.DecisionRepository` / `repository.ExecutionRepository`
-- `telemetry.TelemetryPublisher`
-- `analytics.LearningEngine`
+    RESULT --> TRACE["Execution trace and structured telemetry"]
+    RESULT --> ANALYTICS["Cost, latency, confidence, and savings analytics"]
+    RESULT --> LEARNING["Learning snapshots"]
+    RESULT --> UI
+```
 
-## Observability
+The decision engine evaluates every candidate strategy and selects the lowest estimated cost among the routes that satisfy configured quality, confidence, latency, and policy constraints. It does not default to the cheapest route when that route is unsuitable.
 
-- Correlation propagation: `X-Correlation-Id`
-- Execution trace timeline: request -> decision -> completion/failure
-- Metrics: avg cost, latency, confidence, success/failure, savings
-- Health: custom `ExecutionTraceHealthIndicator`
+## Request Lifecycle
 
-## Diagrams
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as React frontend
+    participant A as REST API
+    participant O as Orchestration service
+    participant D as Decision engine
+    participant E as Execution path
+    participant T as Trace and analytics
 
-- UML: `docs/diagrams/uml-class-diagram.mmd`
-- Components: `docs/diagrams/component-diagram.mmd`
+    U->>F: Submit prompt
+    F->>A: POST /api/v1/orchestrator/execute
+    A->>O: Validated UserRequest
+    O->>T: Start trace
+    O->>D: Evaluate request and policies
+    D-->>O: Selected strategy and rationale
+    O->>T: Record decision
+    O->>E: Execute selected path
+    E-->>O: Output, cost, latency, tokens, confidence
+    O->>T: Store result and learning snapshot
+    O-->>A: OrchestrationResult
+    A-->>F: JSON response with correlation ID
+    F-->>U: Result, decision flow, trace, and analytics
+```
+
+## Cloud Deployment
+
+```mermaid
+flowchart LR
+    DEV["GitHub repository"] --> CI["GitHub Actions"]
+    CI -->|"backend checks pass"| RENDER["Render free web service"]
+    CI -->|"frontend checks pass"| VERCEL["Vercel static deployment"]
+
+    BROWSER["Judge's browser"] -->|"HTTPS"| VERCEL
+    VERCEL -->|"REST over HTTPS"| RENDER
+    RENDER --> CONTAINER["Java 21 Spring Boot container"]
+    CONTAINER --> MEMORY["In-memory demo repositories"]
+
+    RENDER --> HEALTH["/health and /actuator/health"]
+```
+
+The free deployment intentionally preserves the prototype's in-memory stores. Execution history resets whenever the Render service restarts, redeploys, or wakes on a fresh instance. PostgreSQL, Redis, and Kafka remain future production adapters rather than hidden runtime dependencies.
+
+## Architectural Boundaries
+
+- Controllers validate and expose the existing REST contracts.
+- The orchestration service owns request normalization, trace lifecycle, result recording, and learning updates.
+- The decision package owns classification, scoring, policy gates, and route selection.
+- Execution paths isolate deterministic rules, skills, model gateways, and agent coordinators.
+- In-memory repositories support a self-contained hackathon demo without credentials or paid infrastructure.
+- Telemetry and analytics expose explainable routing, health, cost, latency, confidence, tokens, and savings.

@@ -84,7 +84,7 @@ export function CostIntelligenceDashboard({
   const donutGradient = toDonut(routeLegend);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
+    <section className="min-w-0 space-y-4 rounded-2xl border border-cyan-200/20 bg-slate-900/60 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Cost Intelligence Dashboard</h2>
@@ -170,7 +170,7 @@ export function CostIntelligenceDashboard({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.5fr,1fr]">
-        <article className="rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
+        <article className="min-w-0 rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
           <h3 className="text-sm font-semibold">Execution Comparison Matrix</h3>
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full text-left text-xs">
@@ -219,7 +219,7 @@ export function CostIntelligenceDashboard({
           </div>
         </article>
 
-        <article className="rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
+        <article className="min-w-0 rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
           <h3 className="text-sm font-semibold">Route Distribution</h3>
           <div className="mt-3 flex items-center gap-4">
             <div
@@ -243,7 +243,7 @@ export function CostIntelligenceDashboard({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <article className="rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
+        <article className="min-w-0 rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
           <h3 className="text-sm font-semibold">Savings Charts</h3>
           <div className="mt-3 space-y-3">
             {savingsBars.map((bar) => (
@@ -264,7 +264,7 @@ export function CostIntelligenceDashboard({
           </div>
         </article>
 
-        <article className="rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
+        <article className="min-w-0 rounded-xl border border-slate-700/90 bg-slate-950/55 p-4">
           <h3 className="text-sm font-semibold">Requests Routed (By Path)</h3>
           <div className="mt-3 space-y-2">
             {routeLegend.map((route) => (

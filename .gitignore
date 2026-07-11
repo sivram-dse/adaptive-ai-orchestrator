@@ -7,3 +7,10 @@ dist/
 .vscode/
 .tools/
 *.zip
+*.log
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+.browser-review-*/
+outputs/ui-review*.png

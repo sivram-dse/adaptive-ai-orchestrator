@@ -47,12 +47,21 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiError> build(HttpStatus status, String message, List<String> details, Exception ex) {
         String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_KEY);
-        logger.error(
-                "event=api_error status={} correlationId={} message={}",
-                status.value(),
-                correlationId,
-                message,
-                ex);
+        if (status.is4xxClientError()) {
+            logger.warn(
+                    "event=api_error status={} correlationId={} exception={} message=\"{}\"",
+                    status.value(),
+                    correlationId,
+                    ex.getClass().getSimpleName(),
+                    sanitize(message));
+        } else {
+            logger.error(
+                    "event=api_error status={} correlationId={} message=\"{}\"",
+                    status.value(),
+                    correlationId,
+                    sanitize(message),
+                    ex);
+        }
         ApiError body = new ApiError(
                 Instant.now(),
                 status.value(),
@@ -61,5 +70,9 @@ public class GlobalExceptionHandler {
                 correlationId,
                 details);
         return ResponseEntity.status(status).body(body);
+    }
+
+    private String sanitize(String value) {
+        return value == null ? "" : value.replaceAll("[\\r\\n]+", " ").trim();
     }
 }

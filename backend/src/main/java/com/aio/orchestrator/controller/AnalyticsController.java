@@ -8,8 +8,11 @@ import com.aio.orchestrator.analytics.RouteUsage;
 import com.aio.orchestrator.analytics.ScenarioBenchmarkResult;
 import com.aio.orchestrator.model.OrchestrationResult;
 import com.aio.orchestrator.repository.ExecutionRepository;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/orchestrator/analytics")
+@Validated
 public class AnalyticsController {
 
     private final OrchestrationAnalyticsService analyticsService;
@@ -43,12 +47,14 @@ public class AnalyticsController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<OrchestrationResult>> history(@RequestParam(defaultValue = "50") int limit) {
+    public ResponseEntity<List<OrchestrationResult>> history(
+            @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
         return ResponseEntity.ok(executionRepository.findRecent(limit));
     }
 
     @GetMapping("/learning")
-    public ResponseEntity<List<LearningSnapshot>> learning(@RequestParam(defaultValue = "50") int limit) {
+    public ResponseEntity<List<LearningSnapshot>> learning(
+            @RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
         return ResponseEntity.ok(learningEngine.latest(limit));
     }
 

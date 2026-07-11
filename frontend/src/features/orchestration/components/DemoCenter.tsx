@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { LoaderCircle, MonitorPlay, Play } from "lucide-react";
 import { ExecutionStrategy, OrchestrationResultDto } from "../../../shared/contracts/orchestration.contracts";
 import { StrategyBadge } from "./StrategyBadge";
 
@@ -219,19 +220,21 @@ export function DemoCenter({ loading, onRunScenario }: DemoCenterProps) {
             type="button"
             onClick={runAllScenarios}
             disabled={runningAll || loading}
-            className="rounded-lg bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-cyan-400 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-md bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:opacity-60"
           >
+            {runningAll ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} />}
             {runningAll ? "Running All..." : "Run All Scenarios"}
           </button>
           <button
             type="button"
             onClick={() => setPresentationMode((value) => !value)}
-            className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold transition ${
               presentationMode
                 ? "border-fuchsia-300 bg-fuchsia-400/20 text-fuchsia-100"
                 : "border-slate-500 bg-slate-900/70 text-slate-200"
             }`}
           >
+            <MonitorPlay size={14} />
             {presentationMode ? "Exit Presentation Mode" : "Presentation Mode"}
           </button>
         </div>
@@ -341,8 +344,9 @@ export function DemoCenter({ loading, onRunScenario }: DemoCenterProps) {
                   setPresentationIndex(index);
                   void executeScenario(scenario);
                 }}
-                className="mt-3 w-full rounded-lg border border-cyan-300/30 bg-cyan-500/20 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-500/35 disabled:opacity-60"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-cyan-300/30 bg-cyan-500/20 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-500/35 disabled:opacity-60"
               >
+                {isActive ? <LoaderCircle size={13} className="animate-spin" /> : <Play size={13} />}
                 {isActive ? "Running..." : `Run ${scenario.title}`}
               </button>
             </article>

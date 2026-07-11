@@ -114,3 +114,9 @@ export interface ScenarioBenchmarkResultDto {
   confidence: number;
   savingsVsAlwaysAgent: number;
 }
+
+export interface HealthDto {
+  status: "UP" | "DOWN";
+  service: string;
+  timestamp: string;
+}
