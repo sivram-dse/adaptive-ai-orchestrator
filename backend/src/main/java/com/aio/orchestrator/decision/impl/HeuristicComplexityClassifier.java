@@ -42,18 +42,63 @@ public class HeuristicComplexityClassifier implements com.aio.orchestrator.decis
     public double complexityScore(UserRequest request) {
         Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
         String rawPayload = request.payload() == null ? "" : request.payload();
-        String payload = (String.join(" ", metadata.values()) + " " + rawPayload).toLowerCase(Locale.ROOT);
+        String payload = normalizedText(rawPayload, metadata);
         int payloadSize = payload.length();
-        double score = Math.min(0.35d, payloadSize / 8000d);
-        score += keywordWeight(payload, LOW_SIGNAL, 0.01d);
-        score += keywordWeight(payload, MEDIUM_SIGNAL, 0.12d);
-        score += keywordWeight(payload, HIGH_SIGNAL, 0.20d);
+        double score = Math.min(0.25d, payloadSize / 9000d);
+        score += Math.min(0.08d, keywordWeight(payload, LOW_SIGNAL, 0.01d));
+        score += Math.min(0.32d, keywordWeight(payload, MEDIUM_SIGNAL, 0.10d));
+        score += Math.min(0.38d, keywordWeight(payload, HIGH_SIGNAL, 0.18d));
+        score += taskBreadthWeight(rawPayload);
         score += parseMetadata(request, "reasoningDepth", 0.30d);
         score += parseMetadata(request, "contextSize", 0.20d);
         score += parseMetadata(request, "memoryRequirement", 0.20d);
         score += parseMetadata(request, "externalTools", 0.15d);
         score += parseMetadata(request, "privacyLevel", 0.10d);
+        score = Math.max(score, difficultyFloor(metadata.get("difficulty")));
+        score = Math.max(score, categoryFloor(metadata.get("category")));
         return clamp(score);
+    }
+
+    private static String normalizedText(String payload, Map<String, String> metadata) {
+        return (String.join(" ", metadata.values()) + " " + payload).toLowerCase(Locale.ROOT);
+    }
+
+    private static double taskBreadthWeight(String payload) {
+        String normalized = payload == null ? "" : payload.toLowerCase(Locale.ROOT);
+        double weight = 0d;
+        if (normalized.contains(" and ") || normalized.contains(",")) {
+            weight += 0.04d;
+        }
+        if (normalized.matches(".*\\b\\d+\\b.*")
+                || normalized.contains("including")
+                || normalized.contains("with ")
+                || normalized.contains("plus")) {
+            weight += 0.05d;
+        }
+        return Math.min(0.10d, weight);
+    }
+
+    private static double difficultyFloor(String difficulty) {
+        if (difficulty == null) {
+            return 0d;
+        }
+        return switch (difficulty.toLowerCase(Locale.ROOT)) {
+            case "easy" -> 0.24d;
+            case "medium" -> 0.43d;
+            case "complex" -> 0.64d;
+            default -> 0d;
+        };
+    }
+
+    private static double categoryFloor(String category) {
+        if (category == null) {
+            return 0d;
+        }
+        return switch (category.toLowerCase(Locale.ROOT)) {
+            case "medical", "finance", "research", "reasoning" -> 0.52d;
+            case "travel", "analytics", "sql" -> 0.42d;
+            default -> 0d;
+        };
     }
 
     private static double keywordWeight(String payload, Set<String> keywords, double eachWeight) {

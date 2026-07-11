@@ -32,12 +32,15 @@ const CATEGORIES = [
   "reasoning",
 ] as const;
 
+const DIFFICULTIES = ["easy", "medium", "complex"] as const;
+
 type PromptCategory = (typeof CATEGORIES)[number];
+type PromptDifficulty = (typeof DIFFICULTIES)[number];
 
 export function OrchestrationPage() {
   const api = useMemo(() => new HttpOrchestrationApi(), []);
   const [prompt, setPrompt] = useState("Validate this JSON payload and confirm required keys.");
-  const [difficulty, setDifficulty] = useState("easy");
+  const [difficulty, setDifficulty] = useState<PromptDifficulty>("easy");
   const [category, setCategory] = useState<PromptCategory>("coding");
   const [pathFilter, setPathFilter] = useState<ExecutionStrategy | "ALL">("ALL");
   const [loading, setLoading] = useState(false);
@@ -74,8 +77,21 @@ export function OrchestrationPage() {
   function onPromptChange(nextPrompt: string) {
     setPrompt(nextPrompt);
     const inferredCategory = inferPromptCategory(nextPrompt);
+    const nextCategory = inferredCategory ?? category;
     if (inferredCategory && inferredCategory !== category) {
       setCategory(inferredCategory);
+    }
+    const inferredDifficulty = inferPromptDifficulty(nextPrompt, nextCategory);
+    if (inferredDifficulty && inferredDifficulty !== difficulty) {
+      setDifficulty(inferredDifficulty);
+    }
+  }
+
+  function onCategoryChange(nextCategory: PromptCategory) {
+    setCategory(nextCategory);
+    const inferredDifficulty = inferPromptDifficulty(prompt, nextCategory);
+    if (inferredDifficulty && inferredDifficulty !== difficulty) {
+      setDifficulty(inferredDifficulty);
     }
   }
 
@@ -108,10 +124,15 @@ export function OrchestrationPage() {
     event.preventDefault();
     const inferredCategory = inferPromptCategory(prompt);
     const executionCategory = inferredCategory ?? category;
+    const inferredDifficulty = inferPromptDifficulty(prompt, executionCategory);
+    const executionDifficulty = inferredDifficulty ?? difficulty;
     if (executionCategory !== category) {
       setCategory(executionCategory);
     }
-    await executePrompt(prompt, executionCategory, difficulty);
+    if (executionDifficulty !== difficulty) {
+      setDifficulty(executionDifficulty);
+    }
+    await executePrompt(prompt, executionCategory, executionDifficulty);
   }
 
   async function executePrompt(
@@ -130,9 +151,8 @@ export function OrchestrationPage() {
         metadata: {
           category: promptCategory,
           difficulty: promptDifficulty,
-          reasoningDepth:
-            promptDifficulty === "easy" ? "0.2" : promptDifficulty === "medium" ? "0.5" : "0.85",
-          contextSize: promptDifficulty === "complex" ? "0.85" : "0.35",
+          reasoningDepth: reasoningDepthFor(promptDifficulty),
+          contextSize: contextSizeFor(promptDifficulty),
           ...(extraMetadata ?? {}),
         },
       });
@@ -183,7 +203,7 @@ export function OrchestrationPage() {
             />
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value as PromptCategory)}
+              onChange={(event) => onCategoryChange(event.target.value as PromptCategory)}
               className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
             >
               {CATEGORIES.map((value) => (
@@ -194,10 +214,10 @@ export function OrchestrationPage() {
             </select>
             <select
               value={difficulty}
-              onChange={(event) => setDifficulty(event.target.value)}
+              onChange={(event) => setDifficulty(event.target.value as PromptDifficulty)}
               className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
             >
-              {["easy", "medium", "complex"].map((value) => (
+              {DIFFICULTIES.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
@@ -431,8 +451,85 @@ function inferPromptCategory(prompt: string): PromptCategory | null {
   return null;
 }
 
+function inferPromptDifficulty(prompt: string, category: PromptCategory): PromptDifficulty | null {
+  const text = prompt.toLowerCase();
+  if (!text.trim()) return null;
+
+  const highSignals = countMatches(text, [
+    /\barchitecture\b/,
+    /\bmigration\b/,
+    /\bmulti[- ]?step\b/,
+    /\bworkflow\b/,
+    /\bstrategy\b/,
+    /\bstrategic\b/,
+    /\bgovernance\b/,
+    /\brisk\b/,
+    /\banomal(?:y|ies)\b/,
+    /\boptimi[sz]ation/,
+    /\bdiagnosis\b/,
+    /\bcurrent best practices\b/,
+    /\bwith\b.*\band\b/,
+  ]);
+  const mediumSignals = countMatches(text, [
+    /\banaly[sz]e\b/,
+    /\banalysis\b/,
+    /\breport\b/,
+    /\bresearch\b/,
+    /\bsql\b/,
+    /\bquery\b/,
+    /\bdashboard\b/,
+    /\btrend/,
+    /\bplan\b/,
+    /\bitinerary\b/,
+    /\bflight\b/,
+    /\bhotel\b/,
+    /\bbudget\b/,
+  ]);
+  const lowSignals = countMatches(text, [
+    /\bvalidate\b/,
+    /\bformat\b/,
+    /\btranslate\b/,
+    /\bsummarize\b/,
+    /\bclassify\b/,
+    /\bdraft\b/,
+  ]);
+
+  if (category === "travel" && matchesAny(text, [/\bplan\b/, /\btrip\b/, /\bitinerary\b/, /\b\d+[- ]?day\b/])) {
+    return "complex";
+  }
+  if (["medical", "finance", "research", "reasoning"].includes(category) && highSignals + mediumSignals >= 2) {
+    return "complex";
+  }
+  if (highSignals >= 1 || mediumSignals >= 3) {
+    return "complex";
+  }
+  if (mediumSignals >= 1 || ["analytics", "sql", "travel"].includes(category)) {
+    return "medium";
+  }
+  if (lowSignals >= 1) {
+    return "easy";
+  }
+  return null;
+}
+
+function reasoningDepthFor(difficulty: string): string {
+  if (difficulty === "easy") return "0.2";
+  if (difficulty === "medium") return "0.55";
+  return "0.85";
+}
+
+function contextSizeFor(difficulty: string): string {
+  if (difficulty === "easy") return "0.25";
+  if (difficulty === "medium") return "0.55";
+  return "0.85";
+}
+
 function matchesAny(text: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(text));
+}
+
+function countMatches(text: string, patterns: RegExp[]) {
+  return patterns.filter((pattern) => pattern.test(text)).length;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
