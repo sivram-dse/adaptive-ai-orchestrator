@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -74,5 +76,34 @@ class OrchestrationControllerTest {
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
                 .andExpect(header().string("Strict-Transport-Security", "max-age=31536000; includeSubDomains"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "translation,easy,Translate this paragraph from English to French while preserving formal business tone.",
+            "travel,complex,Plan a 5-day business trip to Tokyo including flight hotel options commute estimates and itinerary.",
+            "reasoning,complex,Review this enterprise platform architecture and propose phased migration strategy with risks and controls."
+    })
+    void shouldExecuteDemoSkillScenariosWithoutServerError(String category, String difficulty, String prompt)
+            throws Exception {
+        String payload = """
+                {
+                  "tenantId": "tenant",
+                  "userId": "user",
+                  "payload": "%s",
+                  "metadata": {
+                    "category": "%s",
+                    "difficulty": "%s"
+                  }
+                }
+                """.formatted(prompt, category, difficulty);
+
+        mockMvc.perform(post("/api/v1/orchestrator/execute")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.strategy").isNotEmpty())
+                .andExpect(jsonPath("$.output").isNotEmpty());
     }
 }
