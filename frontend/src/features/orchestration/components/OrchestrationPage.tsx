@@ -17,11 +17,28 @@ import { CostIntelligenceDashboard } from "./CostIntelligenceDashboard";
 import { ExplainableAIPanel } from "./ExplainableAIPanel";
 import { DemoCenter, DemoScenario } from "./DemoCenter";
 
+const CATEGORIES = [
+  "coding",
+  "medical",
+  "finance",
+  "travel",
+  "research",
+  "translation",
+  "summarization",
+  "classification",
+  "analytics",
+  "sql",
+  "email",
+  "reasoning",
+] as const;
+
+type PromptCategory = (typeof CATEGORIES)[number];
+
 export function OrchestrationPage() {
   const api = useMemo(() => new HttpOrchestrationApi(), []);
   const [prompt, setPrompt] = useState("Validate this JSON payload and confirm required keys.");
   const [difficulty, setDifficulty] = useState("easy");
-  const [category, setCategory] = useState("coding");
+  const [category, setCategory] = useState<PromptCategory>("coding");
   const [pathFilter, setPathFilter] = useState<ExecutionStrategy | "ALL">("ALL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +71,14 @@ export function OrchestrationPage() {
 
   const filteredHistory = history.filter((item) => pathFilter === "ALL" || item.strategy === pathFilter);
 
+  function onPromptChange(nextPrompt: string) {
+    setPrompt(nextPrompt);
+    const inferredCategory = inferPromptCategory(nextPrompt);
+    if (inferredCategory && inferredCategory !== category) {
+      setCategory(inferredCategory);
+    }
+  }
+
   async function refreshDashboard(withScenarios = true) {
     try {
       const [nextSummary, nextMetrics, nextRoutes, nextHistory, nextTraces, nextLearning] = await Promise.all([
@@ -81,7 +106,12 @@ export function OrchestrationPage() {
 
   async function onExecute(event: FormEvent) {
     event.preventDefault();
-    await executePrompt(prompt, category, difficulty);
+    const inferredCategory = inferPromptCategory(prompt);
+    const executionCategory = inferredCategory ?? category;
+    if (executionCategory !== category) {
+      setCategory(executionCategory);
+    }
+    await executePrompt(prompt, executionCategory, difficulty);
   }
 
   async function executePrompt(
@@ -125,7 +155,7 @@ export function OrchestrationPage() {
 
   async function onRunDemoScenario(scenario: DemoScenario): Promise<OrchestrationResultDto | null> {
     setPrompt(scenario.prompt);
-    setCategory(scenario.category);
+    setCategory(scenario.category as PromptCategory);
     setDifficulty(scenario.difficulty);
     return executePrompt(scenario.prompt, scenario.category, scenario.difficulty, {
       demoScenario: scenario.id,
@@ -147,16 +177,16 @@ export function OrchestrationPage() {
           <div className="grid gap-3 md:grid-cols-6">
             <input
               value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
+              onChange={(event) => onPromptChange(event.target.value)}
               className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm md:col-span-3"
               placeholder="Enter enterprise prompt"
             />
             <select
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => setCategory(event.target.value as PromptCategory)}
               className="min-w-0 w-full rounded-lg border border-slate-500 bg-slate-950/70 px-3 py-2 text-sm"
             >
-              {["coding", "medical", "finance", "travel", "research", "translation", "summarization", "classification", "analytics", "sql", "email", "reasoning"].map((value) => (
+              {CATEGORIES.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
@@ -356,6 +386,53 @@ function Toast({ tone, message, onClose }: { tone: "success" | "error"; message:
       </button>
     </div>
   );
+}
+
+function inferPromptCategory(prompt: string): PromptCategory | null {
+  const text = prompt.toLowerCase();
+  if (!text.trim()) return null;
+
+  if (matchesAny(text, [/\btravel\b/, /\btrip\b/, /\bitinerary\b/, /\bflight\b/, /\bhotel\b/, /\bcommute\b/, /\btour\b/, /\bvacation\b/])) {
+    return "travel";
+  }
+  if (matchesAny(text, [/\bmedical\b/, /\bpatient\b/, /\bclinical\b/, /\bdiagnosis\b/, /\btreatment\b/, /\bhealth\b/])) {
+    return "medical";
+  }
+  if (matchesAny(text, [/\bfinance\b/, /\bfinancial\b/, /\brevenue\b/, /\bexpense\b/, /\bcost\b/, /\bbudget\b/, /\bprofit\b/, /\bq[1-4]\b/])) {
+    return "finance";
+  }
+  if (matchesAny(text, [/\bresearch\b/, /\bbest practices\b/, /\bcurrent\b/, /\btrends\b/, /\bcitation\b/])) {
+    return "research";
+  }
+  if (matchesAny(text, [/\btranslate\b/, /\btranslation\b/, /\bfrench\b/, /\bspanish\b/, /\bgerman\b/, /\blanguage\b/])) {
+    return "translation";
+  }
+  if (matchesAny(text, [/\bsummarize\b/, /\bsummary\b/, /\bbrief\b/, /\bexecutive bullet\b/])) {
+    return "summarization";
+  }
+  if (matchesAny(text, [/\bclassify\b/, /\bclassification\b/, /\bsentiment\b/, /\blabel\b/, /\bcategory\b/])) {
+    return "classification";
+  }
+  if (matchesAny(text, [/\bsql\b/, /\bpostgres\b/, /\bquery\b/, /\bdatabase\b/, /\btable\b/])) {
+    return "sql";
+  }
+  if (matchesAny(text, [/\bemail\b/, /\bdraft\b/, /\bstakeholder\b/, /\bescalation\b/])) {
+    return "email";
+  }
+  if (matchesAny(text, [/\banalytics\b/, /\bmetric\b/, /\bdashboard\b/, /\banomaly\b/, /\btrend\b/])) {
+    return "analytics";
+  }
+  if (matchesAny(text, [/\barchitecture\b/, /\bmigration\b/, /\breason\b/, /\brisk\b/, /\bcontrols\b/, /\bstrategy\b/])) {
+    return "reasoning";
+  }
+  if (matchesAny(text, [/\bjson\b/, /\bvalidate\b/, /\bcode\b/, /\bregex\b/, /\bapi\b/])) {
+    return "coding";
+  }
+  return null;
+}
+
+function matchesAny(text: string, patterns: RegExp[]) {
+  return patterns.some((pattern) => pattern.test(text));
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {

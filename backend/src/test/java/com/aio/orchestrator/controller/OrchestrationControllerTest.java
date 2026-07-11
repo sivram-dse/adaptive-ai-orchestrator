@@ -82,9 +82,10 @@ class OrchestrationControllerTest {
     @CsvSource({
             "translation,easy,Translate this paragraph from English to French while preserving formal business tone.",
             "travel,complex,Plan a 5-day business trip to Tokyo including flight hotel options commute estimates and itinerary.",
-            "reasoning,complex,Review this enterprise platform architecture and propose phased migration strategy with risks and controls."
+            "reasoning,complex,Review this enterprise platform architecture and propose phased migration strategy with risks and controls.",
+            "finance,complex,Analyze Q4 revenue and expense trends identify anomalies and suggest 3 strategic cost optimizations."
     })
-    void shouldExecuteDemoSkillScenariosWithoutServerError(String category, String difficulty, String prompt)
+    void shouldExecuteDemoScenariosWithoutServerError(String category, String difficulty, String prompt)
             throws Exception {
         String payload = """
                 {

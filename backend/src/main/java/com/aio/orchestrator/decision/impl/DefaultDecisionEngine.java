@@ -12,6 +12,7 @@ import com.aio.orchestrator.model.ExecutionStrategy;
 import com.aio.orchestrator.model.StrategyDecision;
 import com.aio.orchestrator.model.TaskComplexity;
 import com.aio.orchestrator.model.UserRequest;
+import com.aio.orchestrator.skills.SkillRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -33,6 +34,7 @@ public class DefaultDecisionEngine implements DecisionEngine {
     private final CostPolicy costPolicy;
     private final DecisionAnalytics decisionAnalytics;
     private final RoutingProperties routingProperties;
+    private final SkillRegistry skillRegistry;
 
     public DefaultDecisionEngine(
             HeuristicComplexityClassifier complexityClassifier,
@@ -40,13 +42,15 @@ public class DefaultDecisionEngine implements DecisionEngine {
             CostEstimator costEstimator,
             CostPolicy costPolicy,
             DecisionAnalytics decisionAnalytics,
-            RoutingProperties routingProperties) {
+            RoutingProperties routingProperties,
+            SkillRegistry skillRegistry) {
         this.complexityClassifier = complexityClassifier;
         this.strategySelector = strategySelector;
         this.costEstimator = costEstimator;
         this.costPolicy = costPolicy;
         this.decisionAnalytics = decisionAnalytics;
         this.routingProperties = routingProperties;
+        this.skillRegistry = skillRegistry;
     }
 
     @Override
@@ -120,7 +124,7 @@ public class DefaultDecisionEngine implements DecisionEngine {
         Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
         boolean deterministic = "true".equalsIgnoreCase(metadata.getOrDefault("requiresDeterminism", "false"));
         boolean safetyCritical = "true".equalsIgnoreCase(metadata.getOrDefault("safetyCritical", "false"))
-                || request.payload().toLowerCase().contains("medical");
+                || normalizedText(request).contains("medical");
         double minimum = switch (complexity) {
             case TRIVIAL -> 0.70d;
             case LOW -> 0.74d;
@@ -176,6 +180,9 @@ public class DefaultDecisionEngine implements DecisionEngine {
         if (isGenerativeWorkload(request) && strategy == ExecutionStrategy.DETERMINISTIC_CODE) {
             return false;
         }
+        if (strategy == ExecutionStrategy.AI_SKILL && skillRegistry.resolve(request).isEmpty()) {
+            return false;
+        }
         if (requiresHighFidelitySynthesis(request)
                 && strategy.ordinal() < ExecutionStrategy.LARGE_LLM.ordinal()) {
             return false;
@@ -213,26 +220,39 @@ public class DefaultDecisionEngine implements DecisionEngine {
     }
 
     private boolean isGenerativeWorkload(UserRequest request) {
-        String payload = request.payload() == null ? "" : request.payload().toLowerCase(Locale.ROOT);
-        return payload.contains("email")
-                || payload.contains("draft")
-                || payload.contains("research")
-                || payload.contains("explain")
-                || payload.contains("plan")
-                || payload.contains("itinerary")
-                || payload.contains("migration")
-                || payload.contains("summarize")
-                || payload.contains("translate")
-                || payload.contains("question");
+        String text = normalizedText(request);
+        return text.contains("email")
+                || text.contains("draft")
+                || text.contains("research")
+                || text.contains("explain")
+                || text.contains("plan")
+                || text.contains("itinerary")
+                || text.contains("migration")
+                || text.contains("summarize")
+                || text.contains("translate")
+                || text.contains("question")
+                || text.contains("analyze")
+                || text.contains("analysis")
+                || text.contains("suggest");
     }
 
     private boolean requiresHighFidelitySynthesis(UserRequest request) {
-        String payload = request.payload() == null ? "" : request.payload().toLowerCase(Locale.ROOT);
-        return payload.contains("research")
-                || payload.contains("citation")
-                || payload.contains("regulatory")
-                || payload.contains("governance")
-                || payload.contains("multi-source");
+        String text = normalizedText(request);
+        return text.contains("research")
+                || text.contains("citation")
+                || text.contains("regulatory")
+                || text.contains("governance")
+                || text.contains("multi-source")
+                || text.contains("financial")
+                || text.contains("finance")
+                || text.contains("medical")
+                || text.contains("legal");
+    }
+
+    private String normalizedText(UserRequest request) {
+        Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
+        return (String.join(" ", metadata.values()) + " " + (request.payload() == null ? "" : request.payload()))
+                .toLowerCase(Locale.ROOT);
     }
 
     private ExecutionStrategy parseForcedStrategy(String forcedPath) {

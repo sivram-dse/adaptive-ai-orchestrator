@@ -14,10 +14,11 @@ public class HeuristicComplexityClassifier implements com.aio.orchestrator.decis
             "validate", "format", "json", "regex", "classify", "translate", "summarize"
     );
     private static final Set<String> MEDIUM_SIGNAL = Set.of(
-            "sql", "analysis", "financial", "report", "research", "explain", "email"
+            "sql", "analysis", "analyze", "financial", "finance", "revenue", "expense", "report", "research",
+            "explain", "email"
     );
     private static final Set<String> HIGH_SIGNAL = Set.of(
-            "plan", "architecture", "migration", "tool", "multi-step", "workflow", "agent"
+            "plan", "architecture", "migration", "tool", "multi-step", "workflow", "agent", "strategic"
     );
 
     @Override
@@ -39,7 +40,9 @@ public class HeuristicComplexityClassifier implements com.aio.orchestrator.decis
     }
 
     public double complexityScore(UserRequest request) {
-        String payload = request.payload() == null ? "" : request.payload().toLowerCase(Locale.ROOT);
+        Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
+        String rawPayload = request.payload() == null ? "" : request.payload();
+        String payload = (String.join(" ", metadata.values()) + " " + rawPayload).toLowerCase(Locale.ROOT);
         int payloadSize = payload.length();
         double score = Math.min(0.35d, payloadSize / 8000d);
         score += keywordWeight(payload, LOW_SIGNAL, 0.01d);

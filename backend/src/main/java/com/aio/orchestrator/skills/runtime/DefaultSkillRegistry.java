@@ -4,6 +4,7 @@ import com.aio.orchestrator.model.UserRequest;
 import com.aio.orchestrator.skills.Skill;
 import com.aio.orchestrator.skills.SkillRegistry;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,9 @@ public class DefaultSkillRegistry implements SkillRegistry {
 
     @Override
     public Optional<Skill> resolve(UserRequest request) {
-        return skills.stream().filter(skill -> skill.supports(request)).findFirst();
+        UserRequest normalized = request.metadata() == null
+                ? new UserRequest(request.requestId(), request.tenantId(), request.userId(), request.payload(), Map.of())
+                : request;
+        return skills.stream().filter(skill -> skill.supports(normalized)).findFirst();
     }
 }

@@ -16,7 +16,9 @@ public class HeuristicStrategySelector implements StrategySelector {
 
     @Override
     public List<ExecutionStrategy> rankCandidateStrategies(UserRequest request) {
-        String payload = request.payload().toLowerCase(Locale.ROOT);
+        Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
+        String rawPayload = request.payload() == null ? "" : request.payload();
+        String payload = (String.join(" ", metadata.values()) + " " + rawPayload).toLowerCase(Locale.ROOT);
         Map<ExecutionStrategy, Double> rankScore = new EnumMap<>(ExecutionStrategy.class);
         for (ExecutionStrategy strategy : ExecutionStrategy.values()) {
             rankScore.put(strategy, baseRank(strategy));
@@ -30,7 +32,7 @@ public class HeuristicStrategySelector implements StrategySelector {
             rankScore.computeIfPresent(ExecutionStrategy.AI_SKILL, (k, v) -> v - 0.3d);
         }
         if (payload.contains("research") || payload.contains("legal") || payload.contains("medical")
-                || payload.contains("financial")) {
+                || payload.contains("financial") || payload.contains("finance")) {
             rankScore.computeIfPresent(ExecutionStrategy.LARGE_LLM, (k, v) -> v - 0.3d);
         }
         if (payload.contains("travel planning") || payload.contains("tool calling") || payload.contains("multi-step")) {
@@ -41,7 +43,6 @@ public class HeuristicStrategySelector implements StrategySelector {
             rankScore.computeIfPresent(ExecutionStrategy.MULTI_AGENT_WORKFLOW, (k, v) -> v - 0.5d);
         }
 
-        Map<String, String> metadata = request.metadata() == null ? Map.of() : request.metadata();
         String requiredPath = metadata.get("requiredExecutionPath");
         if (requiredPath != null) {
             try {

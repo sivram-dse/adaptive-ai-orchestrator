@@ -54,6 +54,22 @@ class DefaultDecisionEngineTest {
     }
 
     @Test
+    void shouldNotRouteUnsupportedFinanceAnalysisToSkill() {
+        StrategyDecision decision = decisionEngine.evaluate(new UserRequest(
+                "r5",
+                "tenant",
+                "user",
+                "Analyze Q4 revenue and expense trends, identify anomalies, and suggest 3 strategic cost optimizations.",
+                Map.of(
+                        "category", "finance",
+                        "difficulty", "complex",
+                        "reasoningDepth", "0.85",
+                        "contextSize", "0.85")));
+
+        assertThat(decision.selectedStrategy()).isEqualTo(ExecutionStrategy.LARGE_LLM);
+    }
+
+    @Test
     void shouldRouteMigrationPromptToMultiAgentWhenForcedByPolicyHint() {
         StrategyDecision decision = decisionEngine.evaluate(new UserRequest(
                 "r4",
