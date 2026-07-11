@@ -55,7 +55,6 @@ The Blueprint sets:
 | Spring profile | `prod` |
 | CORS | Target Vercel URL and `*.vercel.app` previews |
 | Auto deploy | After repository checks pass |
-| Graceful shutdown window | 30 seconds |
 
 Verify the deployed backend:
 
